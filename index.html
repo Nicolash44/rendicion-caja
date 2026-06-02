@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rendición de Caja — Scanner IA</title>
+<style>
+  :root {
+    --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #222;
+    --border: #2a2a2a; --border2: #333;
+    --accent: #00e5a0; --accent2: #00b87a;
+    --warn: #f5a623; --danger: #ff4d4d;
+    --text: #e8e8e8; --text2: #888; --text3: #555;
+    --mono: 'Courier New', monospace;
+    --sans: system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; padding: 1.5rem 1rem; }
+
+  header { max-width: 860px; margin: 0 auto 1.5rem; display: flex; align-items: baseline; gap: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+  header h1 { font-family: var(--mono); font-size: 1rem; font-weight: 700; color: var(--accent); }
+  header span { font-size: 0.75rem; color: var(--text3); font-family: var(--mono); }
+
+  .container { max-width: 860px; margin: 0 auto; }
+
+  /* TABS */
+  .tab-nav { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+  .tab-nav button { font-family: var(--mono); font-size: 0.78rem; padding: 0.55rem 1.1rem; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text3); cursor: pointer; margin-bottom: -1px; transition: all 0.15s; }
+  .tab-nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* UPLOAD */
+  .upload-area { border: 1px dashed var(--border2); border-radius: 8px; padding: 2.5rem 1rem; text-align: center; cursor: pointer; background: var(--surface); margin-bottom: 1.25rem; transition: all 0.15s; }
+  .upload-area:hover, .upload-area.drag { border-color: var(--accent); background: rgba(0,229,160,0.04); }
+  .upload-area p { font-size: 0.9rem; color: var(--text2); margin-top: 0.4rem; }
+  #file-in { display: none; }
+
+  /* PREVIEW BAR */
+  .preview-bar { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .preview-bar img { height: 72px; border-radius: 4px; border: 1px solid var(--border2); }
+  .preview-bar .fi { flex: 1; min-width: 120px; }
+  .preview-bar .fi strong { font-size: 0.88rem; display: block; }
+  .preview-bar .fi span { font-size: 0.75rem; color: var(--text2); font-family: var(--mono); }
+
+  /* BUTTONS */
+  .btn { font-family: var(--mono); font-size: 0.8rem; padding: 0.5rem 1.1rem; border-radius: 4px; border: 1px solid var(--border2); background: transparent; color: var(--text); cursor: pointer; transition: all 0.15s; }
+  .btn:hover { border-color: var(--text2); }
+  .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+  .btn.primary:hover { background: var(--accent2); }
+  .btn.primary:disabled { background: var(--text3); border-color: var(--text3); color: #666; cursor: not-allowed; }
+  .btn-row { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+
+  /* STATUS */
+  .status { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.25rem; text-align: center; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ERROR */
+  .err-box { display: none; background: rgba(255,77,77,0.08); border: 1px solid rgba(255,77,77,0.3); border-radius: 8px; padding: 0.9rem 1.1rem; font-size: 0.84rem; color: var(--danger); margin-bottom: 1rem; line-height: 1.6; }
+
+  /* DATA CARDS */
+  .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+  @media(max-width:580px){ .data-grid { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem 1.25rem; }
+  .card.full { grid-column: 1/-1; }
+  .card.highlight { border-color: var(--accent); }
+  .card.danger { border-color: var(--danger); }
+  .card-title { font-family: var(--mono); font-size: 0.68rem; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.7rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+  .kv { display: flex; justify-content: space-between; align-items: baseline; padding: 0.28rem 0; font-size: 0.83rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .kv:last-child { border: none; }
+  .kv-k { color: var(--text2); font-size: 0.78rem; }
+  .kv-v { font-family: var(--mono); font-weight: 500; }
+  .kv-v.ac { color: var(--accent); }
+  .big-num { font-family: var(--mono); font-size: 1.9rem; font-weight: 700; color: var(--accent); margin: 0.4rem 0 0.2rem; }
+  .obs-box { background: rgba(245,166,35,0.06); border: 1px solid rgba(245,166,35,0.2); border-radius: 6px; padding: 0.7rem 0.9rem; font-size: 0.84rem; color: var(--warn); font-style: italic; line-height: 1.6; }
+
+  /* HISTORIAL */
+  .search-bar { display: flex; gap: 0.6rem; margin-bottom: 1.1rem; flex-wrap: wrap; align-items: center; }
+  .search-bar input, .search-bar select { font-family: var(--mono); font-size: 0.8rem; background: var(--surface); border: 1px solid var(--border2); color: var(--text); border-radius: 4px; padding: 0.42rem 0.7rem; }
+  .search-bar input[type=date] { min-width: 130px; }
+  .totals-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(130px,1fr)); gap: 0.6rem; margin-bottom: 1.1rem; }
+  .tc { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.8rem; }
+  .tc-l { font-size: 0.65rem; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.3rem; }
+  .tc-v { font-size: 1rem; font-weight: 700; font-family: var(--mono); color: var(--accent); }
+  .tc-v.neg { color: var(--danger); }
+  .hist-wrap { overflow-x: auto; }
+  .htable { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .htable th { font-family: var(--mono); font-size: 0.67rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border); text-align: left; cursor: pointer; white-space: nowrap; }
+  .htable th:hover { color: var(--text2); }
+  .htable td { padding: 0.5rem 0.7rem; border-bottom: 1px solid rgba(255,255,255,0.03); font-family: var(--mono); color: var(--text2); white-space: nowrap; }
+  .htable tr:hover td { background: rgba(255,255,255,0.025); cursor: pointer; }
+  .htable td.ac { color: var(--accent); }
+  .htable td.pos { color: var(--accent); }
+  .htable td.neg { color: var(--danger); }
+  .empty-h { text-align: center; padding: 3rem 1rem; color: var(--text3); font-family: var(--mono); font-size: 0.84rem; }
+
+  /* CONFIG */
+  .cfg-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; max-width: 500px; }
+  .cfg-card .card-title { font-family: var(--mono); font-size: 0.68rem; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.9rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+  .field { margin-bottom: 0.8rem; }
+  .field label { font-family: var(--mono); font-size: 0.7rem; color: var(--text3); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .field input { width: 100%; font-family: var(--mono); font-size: 0.8rem; background: var(--surface2); border: 1px solid var(--border2); color: var(--text); border-radius: 4px; padding: 0.45rem 0.7rem; }
+  .field input:focus { outline: none; border-color: var(--accent); }
+  #cfg-status { font-family: var(--mono); font-size: 0.78rem; margin-top: 0.7rem; display: none; }
+  pre.sql { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 0.75rem; font-family: var(--mono); font-size: 0.69rem; color: var(--text2); overflow-x: auto; line-height: 1.65; white-space: pre-wrap; }
+
+  /* MODAL */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 10px; padding: 1.5rem; max-width: 580px; width: 100%; max-height: 85vh; overflow-y: auto; }
+  .modal h3 { font-family: var(--mono); font-size: 0.84rem; color: var(--accent); margin-bottom: 1rem; }
+  .msec { margin-bottom: 0.9rem; }
+  .msec h4 { font-family: var(--mono); font-size: 0.66rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; padding: 0.55rem 1rem; border-radius: 6px; font-family: var(--mono); font-size: 0.8rem; z-index: 999; opacity: 0; transition: opacity 0.25s; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>RENDICIÓN DE CAJA / SCANNER IA</h1>
+  <span>v3.0 · Supabase sync</span>
+</header>
+
+<div class="container">
+  <div class="tab-nav">
+    <button class="active" onclick="showTab('scanner')">Escanear</button>
+    <button onclick="showTab('historial')">Historial</button>
+    <button onclick="showTab('config')">Configuración</button>
+  </div>
+
+  <!-- ══ TAB SCANNER ══ -->
+  <div id="tab-scanner" class="tab-content active">
+
+    <div class="upload-area" id="drop-zone" onclick="document.getElementById('file-in').click()">
+      <div style="font-size:2rem;margin-bottom:0.6rem">📄</div>
+      <p><strong>Subí el PDF o foto de la rendición</strong></p>
+      <p>PDF · JPG · PNG — arrastrá o hacé clic</p>
+    </div>
+    <input type="file" id="file-in" accept="image/*,application/pdf,.pdf">
+
+    <div class="preview-bar" id="preview-bar">
+      <img id="thumb" alt="preview">
+      <div class="fi">
+        <strong id="fname">—</strong>
+        <span id="fsize">—</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="document.getElementById('file-in').click()">Cambiar</button>
+        <button class="btn primary" id="scan-btn" onclick="scan()">✦ Escanear</button>
+      </div>
+    </div>
+
+    <div class="status" id="status">
+      <p style="font-family:var(--mono);font-size:0.84rem;color:var(--text2)">
+        <span class="spinner"></span>Analizando con IA…
+      </p>
+    </div>
+
+    <div class="err-box" id="err-box"></div>
+
+    <div id="results" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
+        <span style="font-family:var(--mono);font-size:0.84rem;color:var(--accent);font-weight:700">DATOS EXTRAÍDOS</span>
+        <div class="btn-row">
+          <button class="btn" onclick="exportCSVUnico()">Exportar CSV</button>
+          <button class="btn" onclick="copyJSON()">Copiar JSON</button>
+        </div>
+      </div>
+
+      <div class="data-grid">
+        <div class="card">
+          <div class="card-title">Identificación</div>
+          <div class="kv"><span class="kv-k">Fecha</span><span class="kv-v" id="r-fecha">—</span></div>
+          <div class="kv"><span class="kv-k">Cajera</span><span class="kv-v" id="r-cajera">—</span></div>
+          <div class="kv"><span class="kv-k">Local</span><span class="kv-v" id="r-local">—</span></div>
+          <div class="kv"><span class="kv-k">Turno</span><span class="kv-v" id="r-turno">—</span></div>
+          <div class="kv"><span class="kv-k">Saldo inicio</span><span class="kv-v ac" id="r-saldo">—</span></div>
+        </div>
+        <div class="card highlight" id="card-cierre">
+          <div class="card-title">Cierre</div>
+          <div class="big-num" id="r-rendido">—</div>
+          <div style="font-size:0.72rem;color:var(--text2);margin-bottom:0.6rem">Total rendido</div>
+          <div class="kv"><span class="kv-k">Diferencia</span><span class="kv-v" id="r-diff">—</span></div>
+          <div class="kv"><span class="kv-k">Venta turno</span><span class="kv-v ac" id="r-venta">—</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Ventas</div>
+          <div class="kv"><span class="kv-k">PIT</span><span class="kv-v ac" id="r-pit">—</span></div>
+          <div class="kv"><span class="kv-k">Cierre Z</span><span class="kv-v ac" id="r-cz">—</span></div>
+          <div class="kv"><span class="kv-k">Nota crédito</span><span class="kv-v" id="r-nc">—</span></div>
+          <div class="kv"><span class="kv-k">Accesorios</span><span class="kv-v ac" id="r-acc">—</span></div>
+          <div class="kv"><span class="kv-k">Celulares</span><span class="kv-v ac" id="r-cel">—</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Cobros</div>
+          <div class="kv"><span class="kv-k">Efectivo</span><span class="kv-v ac" id="r-efec">—</span></div>
+          <div class="kv"><span class="kv-k">Tarjetas</span><span class="kv-v ac" id="r-tarj">—</span></div>
+          <div class="kv"><span class="kv-k">Transferencias</span><span class="kv-v ac" id="r-transf">—</span></div>
+          <div class="kv"><span class="kv-k">OR/Patagway</span><span class="kv-v ac" id="r-or">—</span></div>
+          <div class="kv"><span class="kv-k">Cuenta DNI</span><span class="kv-v ac" id="r-cdni">—</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Tarjetas detalle</div>
+          <div class="kv"><span class="kv-k">Visa Crédito</span><span class="kv-v ac" id="r-visa">—</span></div>
+          <div class="kv"><span class="kv-k">Mastercard</span><span class="kv-v ac" id="r-mc">—</span></div>
+          <div class="kv"><span class="kv-k">Maestro</span><span class="kv-v ac" id="r-maestro">—</span></div>
+          <div class="kv"><span class="kv-k">Naranja</span><span class="kv-v ac" id="r-naranja">—</span></div>
+          <div class="kv"><span class="kv-k">Visa Débito</span><span class="kv-v ac" id="r-vdeb">—</span></div>
+          <div class="kv"><span class="kv-k">Amex</span><span class="kv-v ac" id="r-amex">—</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Gastos / Subo</div>
+          <div class="kv"><span class="kv-k">Total gastos</span><span class="kv-v" id="r-gastos">—</span></div>
+          <div class="kv"><span class="kv-k">Subo y comisión</span><span class="kv-v" id="r-subo">—</span></div>
+          <div class="kv"><span class="kv-k">Tarjetas turno</span><span class="kv-v" id="r-tt">—</span></div>
+        </div>
+        <div class="card full" id="obs-card" style="display:none">
+          <div class="card-title">Observaciones</div>
+          <div class="obs-box" id="r-obs"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB HISTORIAL ══ -->
+  <div id="tab-historial" class="tab-content">
+    <div class="search-bar">
+      <input type="date" id="s-from" title="Desde">
+      <input type="date" id="s-to" title="Hasta">
+      <select id="s-cajera"><option value="">Todas las cajeras</option></select>
+      <button class="btn" onclick="aplicarFiltro()">Filtrar</button>
+      <button class="btn" onclick="limpiarFiltro()">Limpiar</button>
+      <button class="btn" style="margin-left:auto" onclick="exportCSVHistorial()">Exportar CSV</button>
+    </div>
+    <div class="totals-grid" id="totals-grid"></div>
+    <div class="hist-wrap">
+      <table class="htable" id="htable">
+        <thead><tr>
+          <th onclick="sortBy('fecha')">Fecha ↕</th>
+          <th onclick="sortBy('cajera')">Cajera ↕</th>
+          <th onclick="sortBy('turno')">Turno</th>
+          <th onclick="sortBy('venta')">Venta ↕</th>
+          <th onclick="sortBy('rendido')">Rendido ↕</th>
+          <th onclick="sortBy('diferencia')">Diferencia ↕</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="hist-body"></tbody>
+      </table>
+    </div>
+    <div class="empty-h" id="hist-empty" style="display:none">No hay registros aún.<br>Escaneá una rendición para empezar.</div>
+  </div>
+
+  <!-- ══ TAB CONFIG ══ -->
+  <div id="tab-config" class="tab-content">
+
+    <div class="cfg-card">
+      <div class="card-title">Conexión Supabase</div>
+      <p style="font-size:0.8rem;color:var(--text2);margin-bottom:1rem;line-height:1.6">
+        Guardá los datos online en tu proyecto Supabase.<br>
+        Sin configurar, todo queda solo en este browser.
+      </p>
+      <div class="field">
+        <label>URL del proyecto</label>
+        <input id="cfg-url" type="text" placeholder="https://xxxx.supabase.co">
+      </div>
+      <div class="field">
+        <label>Anon public key</label>
+        <input id="cfg-key" type="password" placeholder="eyJhbGci...">
+      </div>
+      <div class="btn-row" style="margin-top:0.9rem">
+        <button class="btn primary" onclick="guardarConfig()">Guardar</button>
+        <button class="btn" onclick="testConexion()">Probar conexión</button>
+        <button class="btn" style="color:var(--danger);margin-left:auto" onclick="borrarConfig()">Borrar</button>
+      </div>
+      <p id="cfg-status"></p>
+    </div>
+
+    <div class="cfg-card">
+      <div class="card-title">SQL — crear tabla (una sola vez)</div>
+      <p style="font-size:0.8rem;color:var(--text2);margin-bottom:0.75rem">Corré esto en el SQL Editor de Supabase:</p>
+      <pre class="sql" id="sql-pre">create table rendiciones (
+  _id bigint primary key,
+  fecha text, cajera text, local text, turno text,
+  pit numeric default 0, cierre_z numeric default 0,
+  nota_credito numeric default 0,
+  venta_accesorios numeric default 0,
+  venta_celulares numeric default 0,
+  venta_total numeric default 0,
+  efectivo numeric default 0, tarjetas numeric default 0,
+  transferencias numeric default 0,
+  or_patagway numeric default 0,
+  cuenta_dni numeric default 0,
+  visa_credito numeric default 0,
+  mastercard numeric default 0, maestro numeric default 0,
+  naranja numeric default 0, visa_debito numeric default 0,
+  amex numeric default 0, total_gastos numeric default 0,
+  subo_comision numeric default 0,
+  total_rendido numeric default 0,
+  diferencia numeric default 0,
+  observaciones text, _guardado text
+);
+alter table rendiciones enable row level security;
+create policy "acceso anonimo" on rendiciones
+  for all using (true) with check (true);</pre>
+      <button class="btn" style="margin-top:0.6rem"
+        onclick="navigator.clipboard.writeText(document.getElementById('sql-pre').textContent).then(()=>toast('SQL copiado','ok'))">
+        Copiar SQL
+      </button>
+    </div>
+
+    <div class="cfg-card">
+      <div class="card-title">Datos locales</div>
+      <p id="local-count" style="font-size:0.8rem;color:var(--text2);margin-bottom:0.75rem">—</p>
+      <div class="btn-row">
+        <button class="btn" onclick="subirLocalesASupabase()">Subir locales a Supabase</button>
+        <button class="btn" style="color:var(--danger)" onclick="borrarTodoLocal()">Borrar datos locales</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal detalle -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h3 id="modal-title">Detalle</h3>
+      <button class="btn" onclick="closeModal()">✕ Cerrar</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══ SUPABASE CONFIG ═══════════════════════════════════════════════
+const LOC_KEY = 'rdcaja_data';
+const CFG_KEY = 'rdcaja_cfg';
+
+function getCfg() {
+  try { return JSON.parse(localStorage.getItem(CFG_KEY) || '{}'); }
+  catch(e) { return {}; }
+}
+function saveCfg(c) { localStorage.setItem(CFG_KEY, JSON.stringify(c)); }
+
+function supaBase() {
+  const { url } = getCfg();
+  return url ? url.replace(/\/+$/, '') : null;
+}
+function supaHdrs() {
+  const { key } = getCfg();
+  return { 'Content-Type': 'application/json', 'apikey': key, 'Authorization': 'Bearer ' + key, 'Prefer': 'return=minimal' };
+}
+
+async function supaGuardar(entry) {
+  const base = supaBase();
+  if (!base) return false;
+  try {
+    const r = await fetch(base + '/rest/v1/rendiciones', {
+      method: 'POST', headers: supaHdrs(), body: JSON.stringify(flatten(entry))
+    });
+    return r.ok;
+  } catch(e) { return false; }
+}
+
+async function supaCargar() {
+  const base = supaBase();
+  if (!base) return null;
+  try {
+    const r = await fetch(base + '/rest/v1/rendiciones?order=_id.desc&limit=500', { headers: supaHdrs() });
+    if (!r.ok) return null;
+    return (await r.json()).map(unflatten);
+  } catch(e) { return null; }
+}
+
+async function supaEliminar(id) {
+  const base = supaBase();
+  if (!base) return;
+  try { await fetch(base + '/rest/v1/rendiciones?_id=eq.' + id, { method: 'DELETE', headers: supaHdrs() }); }
+  catch(e) {}
+}
+
+// ══ LOCAL STORAGE ════════════════════════════════════════════════
+function getLocal() {
+  try { return JSON.parse(localStorage.getItem(LOC_KEY) || '[]'); } catch(e) { return []; }
+}
+function setLocal(d) { localStorage.setItem(LOC_KEY, JSON.stringify(d)); }
+
+// ══ FLATTEN / UNFLATTEN ══════════════════════════════════════════
+function flatten(d) {
+  const v=d.ventas||{}, c=d.cobros||{}, t=d.tarjetas_detalle||{}, g=d.gastos||{};
+  return { _id:d._id, fecha:d.fecha||null, cajera:d.cajera||null, local:d.local||null, turno:d.turno||null,
+    pit:v.pit||0, cierre_z:v.cierre_z||0, nota_credito:v.nota_credito||0,
+    venta_accesorios:v.venta_accesorios||0, venta_celulares:v.venta_celulares||0, venta_total:v.venta_total_turno||0,
+    efectivo:c.total_efectivo||0, tarjetas:c.total_tarjetas||0, transferencias:c.transferencias||0,
+    or_patagway:c.or_patagway||0, cuenta_dni:c.cuenta_dni||0,
+    visa_credito:t.visa_credito||0, mastercard:t.mastercard||0, maestro:t.maestro||0,
+    naranja:t.naranja||0, visa_debito:t.visa_debito||0, amex:t.amex||0,
+    total_gastos:g.total_gastos||0, subo_comision:g.total_subo_comision||0,
+    total_rendido:d.total_rendido||0, diferencia:d.diferencia||0,
+    observaciones:d.observaciones||null, _guardado:d._guardado||new Date().toISOString() };
+}
+function unflatten(r) {
+  return { _id:r._id, _guardado:r._guardado, fecha:r.fecha, cajera:r.cajera, local:r.local, turno:r.turno,
+    ventas:{ pit:r.pit, cierre_z:r.cierre_z, nota_credito:r.nota_credito,
+      venta_accesorios:r.venta_accesorios, venta_celulares:r.venta_celulares, venta_total_turno:r.venta_total },
+    cobros:{ total_efectivo:r.efectivo, total_tarjetas:r.tarjetas, transferencias:r.transferencias,
+      or_patagway:r.or_patagway, cuenta_dni:r.cuenta_dni },
+    tarjetas_detalle:{ visa_credito:r.visa_credito, mastercard:r.mastercard, maestro:r.maestro,
+      naranja:r.naranja, visa_debito:r.visa_debito, amex:r.amex },
+    gastos:{ total_gastos:r.total_gastos, total_subo_comision:r.subo_comision },
+    total_rendido:r.total_rendido, diferencia:r.diferencia, observaciones:r.observaciones };
+}
+
+// ══ ADD HISTORY ══════════════════════════════════════════════════
+async function addHistory(d) {
+  const entry = { ...d, _id: Date.now(), _guardado: new Date().toISOString() };
+  const local = getLocal();
+  local.push(entry);
+  setLocal(local);
+  const ok = await supaGuardar(entry);
+  if (supaBase()) toast(ok ? 'Guardado en Supabase ✓' : 'Guardado local — error Supabase', ok ? 'ok' : 'warn');
+  else toast('Guardado localmente', 'ok');
+}
+
+// ══ TABS ═════════════════════════════════════════════════════════
+function showTab(t) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-nav button').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + t).classList.add('active');
+  document.querySelectorAll('.tab-nav button').forEach(el => {
+    const map = { scanner:'escan', historial:'hist', config:'config' };
+    if (el.textContent.toLowerCase().includes(map[t])) el.classList.add('active');
+  });
+  if (t === 'historial') renderHistorial();
+  if (t === 'config') refreshConfig();
+}
+
+// ══ UPLOAD ═══════════════════════════════════════════════════════
+let imgB64 = null, imgType = null, lastData = null;
+
+const dz = document.getElementById('drop-zone');
+const fi = document.getElementById('file-in');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); const f=e.dataTransfer.files[0]; if(f) loadFile(f); });
+fi.addEventListener('change', e => { if(e.target.files[0]) loadFile(e.target.files[0]); });
+
+function loadFile(f) {
+  const isPDF = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+  imgType = isPDF ? 'application/pdf' : (f.type || 'image/jpeg');
+  const reader = new FileReader();
+  reader.onload = ev => {
+    imgB64 = ev.target.result.split(',')[1];
+    const thumb = document.getElementById('thumb');
+    if (isPDF) { thumb.src=''; thumb.style.cssText='height:60px;font-size:2.5rem;display:flex;align-items:center'; thumb.alt='📄'; }
+    else { thumb.src = ev.target.result; thumb.style = ''; }
+    document.getElementById('fname').textContent = f.name;
+    document.getElementById('fsize').textContent = (f.size/1024).toFixed(1) + ' KB';
+    document.getElementById('preview-bar').style.display = 'flex';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('err-box').style.display = 'none';
+  };
+  reader.readAsDataURL(f);
+}
+
+// ══ SCAN ═════════════════════════════════════════════════════════
+async function scan() {
+  if (!imgB64) return;
+  document.getElementById('scan-btn').disabled = true;
+  document.getElementById('status').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('err-box').style.display = 'none';
+
+  const sys = `Eres un extractor de RENDICIÓN DE CAJA argentino. Respondé ÚNICAMENTE con JSON válido sin markdown.
+{
+  "fecha":"DD/MM/AAAA","cajera":"nombre","local":"nombre","turno":"texto","saldo_inicio":0,
+  "ventas":{"pit":0,"cierre_z":0,"nota_credito":0,"venta_accesorios":0,"venta_celulares":0,"venta_total_turno":0},
+  "cobros":{"total_efectivo":0,"total_tarjetas":0,"transferencias":0,"or_patagway":0,"cuenta_dni":0},
+  "tarjetas_detalle":{"visa_credito":0,"mastercard":0,"maestro":0,"naranja":0,"visa_debito":0,"amex":0},
+  "gastos":{"total_gastos":0,"total_subo_comision":0,"total_tarjetas_turno":0},
+  "total_rendido":0,"diferencia":0,"observaciones":"texto o null"
+}
+Si un campo no existe o no se lee, usar null para texto y 0 para números.`;
+
+  const contentBlock = imgType === 'application/pdf'
+    ? { type:'document', source:{ type:'base64', media_type:'application/pdf', data:imgB64 } }
+    : { type:'image', source:{ type:'base64', media_type:imgType, data:imgB64 } };
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: sys,
+        messages: [{ role:'user', content:[ contentBlock, { type:'text', text:'Extraé todos los datos de esta rendición.' } ] }]
+      })
+    });
+    const rawText = await resp.text();
+    if (!resp.ok) throw new Error('API ' + resp.status + ': ' + rawText.slice(0,200));
+    const raw = JSON.parse(rawText);
+    const txt = (raw.content||[]).map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    if (!txt) throw new Error('Respuesta vacía');
+    const d = JSON.parse(txt);
+    lastData = d;
+    renderResults(d);
+    await addHistory(d);
+  } catch(e) {
+    document.getElementById('err-box').textContent = 'Error: ' + e.message;
+    document.getElementById('err-box').style.display = 'block';
+  } finally {
+    document.getElementById('status').style.display = 'none';
+    document.getElementById('scan-btn').disabled = false;
+  }
+}
+
+// ══ RENDER RESULTS ════════════════════════════════════════════════
+function money(v) { if (!v && v!==0) return '—'; return '$ ' + Number(v).toLocaleString('es-AR'); }
+
+function renderResults(d) {
+  const set = (id, val, cls) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = val;
+    if (cls) el.className = 'kv-v ' + cls;
+  };
+  const v=d.ventas||{}, c=d.cobros||{}, t=d.tarjetas_detalle||{}, g=d.gastos||{};
+  set('r-fecha', d.fecha||'—');
+  set('r-cajera', d.cajera||'—');
+  set('r-local', d.local||'—');
+  set('r-turno', d.turno||'—');
+  set('r-saldo', money(d.saldo_inicio), 'ac');
+  set('r-pit', money(v.pit), 'ac');
+  set('r-cz', money(v.cierre_z), 'ac');
+  set('r-nc', money(v.nota_credito));
+  set('r-acc', money(v.venta_accesorios), 'ac');
+  set('r-cel', money(v.venta_celulares), 'ac');
+  set('r-venta', money(v.venta_total_turno), 'ac');
+  set('r-efec', money(c.total_efectivo), 'ac');
+  set('r-tarj', money(c.total_tarjetas), 'ac');
+  set('r-transf', money(c.transferencias), 'ac');
+  set('r-or', money(c.or_patagway), 'ac');
+  set('r-cdni', money(c.cuenta_dni), 'ac');
+  set('r-visa', money(t.visa_credito), 'ac');
+  set('r-mc', money(t.mastercard), 'ac');
+  set('r-maestro', money(t.maestro), 'ac');
+  set('r-naranja', money(t.naranja), 'ac');
+  set('r-vdeb', money(t.visa_debito), 'ac');
+  set('r-amex', money(t.amex), 'ac');
+  set('r-gastos', money(g.total_gastos));
+  set('r-subo', money(g.total_subo_comision));
+  set('r-tt', money(g.total_tarjetas_turno));
+  document.getElementById('r-rendido').textContent = money(d.total_rendido);
+  const diff = d.diferencia||0;
+  const diffEl = document.getElementById('r-diff');
+  const card = document.getElementById('card-cierre');
+  if (diff < 0) { diffEl.textContent = money(diff); diffEl.style.color = 'var(--danger)'; card.className = 'card danger'; }
+  else if (diff > 0) { diffEl.textContent = '+ ' + money(diff); diffEl.style.color = 'var(--accent)'; card.className = 'card highlight'; }
+  else { diffEl.textContent = '$ 0 ✓'; diffEl.style.color = 'var(--text2)'; card.className = 'card highlight'; }
+  if (d.observaciones) {
+    document.getElementById('r-obs').textContent = d.observaciones;
+    document.getElementById('obs-card').style.display = 'block';
+  } else {
+    document.getElementById('obs-card').style.display = 'none';
+  }
+  document.getElementById('results').style.display = 'block';
+}
+
+// ══ HISTORIAL ════════════════════════════════════════════════════
+let sortCol = 'fecha', sortDir = 1, filtro = {};
+
+function fechaSort(f) {
+  if (!f) return '';
+  if (f.includes('/')) { const [d,m,y]=f.split('/'); return `${y}-${m}-${d}`; }
+  return f;
+}
+
+function aplicarFiltro() {
+  filtro = { desde: document.getElementById('s-from').value, hasta: document.getElementById('s-to').value, cajera: document.getElementById('s-cajera').value };
+  renderHistorial();
+}
+function limpiarFiltro() {
+  ['s-from','s-to'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('s-cajera').value = '';
+  filtro = {};
+  renderHistorial();
+}
+function sortBy(col) { if(sortCol===col) sortDir*=-1; else { sortCol=col; sortDir=1; } renderHistorial(); }
+
+async function renderHistorial() {
+  const cfg = getCfg();
+  let lista;
+  if (cfg.url && cfg.key) {
+    const remote = await supaCargar();
+    if (remote !== null) { lista = remote; setLocal(remote); }
+    else lista = getLocal();
+  } else {
+    lista = getLocal();
+  }
+
+  // poblar cajeras
+  const cajeras = [...new Set(lista.map(r=>r.cajera).filter(Boolean))].sort();
+  const sel = document.getElementById('s-cajera');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todas las cajeras</option>';
+  cajeras.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; if(c===cur)o.selected=true; sel.appendChild(o); });
+
+  // filtrar
+  if (filtro.desde) lista = lista.filter(r => fechaSort(r.fecha) >= filtro.desde);
+  if (filtro.hasta) lista = lista.filter(r => fechaSort(r.fecha) <= filtro.hasta);
+  if (filtro.cajera) lista = lista.filter(r => r.cajera === filtro.cajera);
+
+  // ordenar
+  lista.sort((a,b) => {
+    let va,vb;
+    if (sortCol==='fecha') { va=fechaSort(a.fecha); vb=fechaSort(b.fecha); }
+    else if (sortCol==='cajera') { va=a.cajera||''; vb=b.cajera||''; }
+    else if (sortCol==='turno') { va=a.turno||''; vb=b.turno||''; }
+    else if (sortCol==='venta') { va=(a.ventas||{}).venta_total_turno||0; vb=(b.ventas||{}).venta_total_turno||0; }
+    else if (sortCol==='rendido') { va=a.total_rendido||0; vb=b.total_rendido||0; }
+    else if (sortCol==='diferencia') { va=a.diferencia||0; vb=b.diferencia||0; }
+    return va<vb?-sortDir:va>vb?sortDir:0;
+  });
+
+  // totales
+  const tv = lista.reduce((s,r)=>s+((r.ventas||{}).venta_total_turno||0),0);
+  const tr = lista.reduce((s,r)=>s+(r.total_rendido||0),0);
+  const td = lista.reduce((s,r)=>s+(r.diferencia||0),0);
+  const te = lista.reduce((s,r)=>s+((r.cobros||{}).total_efectivo||0),0);
+  const tt = lista.reduce((s,r)=>s+((r.cobros||{}).total_tarjetas||0),0);
+  const ttr = lista.reduce((s,r)=>s+((r.cobros||{}).transferencias||0),0);
+  document.getElementById('totals-grid').innerHTML = `
+    <div class="tc"><div class="tc-l">Registros</div><div class="tc-v">${lista.length}</div></div>
+    <div class="tc"><div class="tc-l">Venta total</div><div class="tc-v">${money(tv)}</div></div>
+    <div class="tc"><div class="tc-l">Total rendido</div><div class="tc-v">${money(tr)}</div></div>
+    <div class="tc"><div class="tc-l">Diferencia acum.</div><div class="tc-v ${td<0?'neg':''}">${td>=0?'+ ':''}${money(td)}</div></div>
+    <div class="tc"><div class="tc-l">Efectivo</div><div class="tc-v">${money(te)}</div></div>
+    <div class="tc"><div class="tc-l">Tarjetas</div><div class="tc-v">${money(tt)}</div></div>
+    <div class="tc"><div class="tc-l">Transferencias</div><div class="tc-v">${money(ttr)}</div></div>`;
+
+  const tbody = document.getElementById('hist-body');
+  const empty = document.getElementById('hist-empty');
+  tbody.innerHTML = '';
+  if (!lista.length) { empty.style.display='block'; document.getElementById('htable').style.display='none'; return; }
+  empty.style.display='none'; document.getElementById('htable').style.display='table';
+  lista.forEach(r => {
+    const diff = r.diferencia||0;
+    const dc = diff>0?'pos':diff<0?'neg':'';
+    const ds = diff>0?'+ '+money(diff):money(diff);
+    const tr2 = document.createElement('tr');
+    tr2.onclick = () => openModal(r);
+    tr2.innerHTML = `<td>${r.fecha||'—'}</td><td>${r.cajera||'—'}</td><td>${r.turno||'—'}</td>
+      <td class="ac">${money((r.ventas||{}).venta_total_turno)}</td>
+      <td class="ac">${money(r.total_rendido)}</td>
+      <td class="${dc}">${ds}</td>
+      <td><button class="btn" style="font-size:11px;padding:2px 7px" onclick="event.stopPropagation();eliminar(${r._id})">✕</button></td>`;
+    tbody.appendChild(tr2);
+  });
+}
+
+async function eliminar(id) {
+  if (!confirm('¿Eliminar este registro?')) return;
+  const local = getLocal().filter(r=>r._id!==id);
+  setLocal(local);
+  await supaEliminar(id);
+  renderHistorial();
+}
+
+// ══ MODAL ════════════════════════════════════════════════════════
+function kv2(k,v) { return `<div class="kv"><span class="kv-k">${k}</span><span class="kv-v">${v}</span></div>`; }
+
+function openModal(r) {
+  const v=r.ventas||{}, c=r.cobros||{}, t=r.tarjetas_detalle||{}, g=r.gastos||{};
+  const diff=r.diferencia||0;
+  document.getElementById('modal-title').textContent = `${r.fecha||'—'} · ${r.cajera||'—'} · ${r.turno||'—'}`;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="msec"><h4>Identificación</h4>${kv2('Local',r.local||'—')}${kv2('Saldo inicio',money(r.saldo_inicio))}</div>
+    <div class="msec"><h4>Cierre</h4>${kv2('Total rendido',money(r.total_rendido))}${kv2('Diferencia','<span style="color:'+(diff<0?'var(--danger)':'var(--accent)')+'">'+( diff>=0?'+ ':'')+money(diff)+'</span>')}</div>
+    <div class="msec"><h4>Ventas</h4>${kv2('PIT',money(v.pit))}${kv2('Cierre Z',money(v.cierre_z))}${kv2('Accesorios',money(v.venta_accesorios))}${kv2('Celulares',money(v.venta_celulares))}${kv2('Total turno',money(v.venta_total_turno))}</div>
+    <div class="msec"><h4>Cobros</h4>${kv2('Efectivo',money(c.total_efectivo))}${kv2('Tarjetas',money(c.total_tarjetas))}${kv2('Transferencias',money(c.transferencias))}${kv2('OR/Patagway',money(c.or_patagway))}${kv2('Cuenta DNI',money(c.cuenta_dni))}</div>
+    <div class="msec"><h4>Tarjetas detalle</h4>${kv2('Visa Crédito',money(t.visa_credito))}${kv2('Mastercard',money(t.mastercard))}${kv2('Maestro',money(t.maestro))}${kv2('Naranja',money(t.naranja))}${kv2('Visa Débito',money(t.visa_debito))}${kv2('Amex',money(t.amex))}</div>
+    ${r.observaciones?`<div class="msec"><h4>Observaciones</h4><div class="obs-box">${r.observaciones}</div></div>`:''}`;
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+
+// ══ CONFIG UI ════════════════════════════════════════════════════
+function refreshConfig() {
+  const cfg = getCfg();
+  document.getElementById('cfg-url').value = cfg.url || '';
+  document.getElementById('cfg-key').value = cfg.key || '';
+  document.getElementById('local-count').textContent = getLocal().length + ' registros guardados en este browser.';
+}
+
+function guardarConfig() {
+  const url = document.getElementById('cfg-url').value.trim().replace(/\/+$/, '');
+  const key = document.getElementById('cfg-key').value.trim();
+  if (!url || !key) { toast('Completá URL y Key','warn'); return; }
+  saveCfg({ url, key });
+  toast('Configuración guardada ✓','ok');
+}
+
+function borrarConfig() {
+  if (!confirm('¿Borrar la configuración de Supabase?')) return;
+  saveCfg({});
+  document.getElementById('cfg-url').value = '';
+  document.getElementById('cfg-key').value = '';
+  toast('Configuración borrada','warn');
+}
+
+async function testConexion() {
+  const st = document.getElementById('cfg-status');
+  st.style.display = 'block';
+  st.style.color = 'var(--text2)';
+  st.textContent = 'Probando…';
+  // Guardar lo que está en los campos primero
+  const url = document.getElementById('cfg-url').value.trim().replace(/\/+$/, '');
+  const key = document.getElementById('cfg-key').value.trim();
+  if (!url || !key) { st.textContent = 'Completá URL y Key primero.'; st.style.color='var(--warn)'; return; }
+  saveCfg({ url, key });
+  const remote = await supaCargar();
+  if (remote !== null) { st.style.color='var(--accent)'; st.textContent='✓ Conexión OK — ' + remote.length + ' registros en Supabase'; }
+  else { st.style.color='var(--danger)'; st.textContent='✗ Error — revisá la URL y la Key'; }
+}
+
+async function subirLocalesASupabase() {
+  const cfg = getCfg();
+  if (!cfg.url) { toast('Configurá Supabase primero','warn'); return; }
+  const local = getLocal();
+  if (!local.length) { toast('No hay datos locales','warn'); return; }
+  toast('Subiendo ' + local.length + ' registros…','ok');
+  let ok = 0;
+  for (const e of local) { if (await supaGuardar(e)) ok++; }
+  toast(ok + '/' + local.length + ' registros subidos ✓','ok');
+}
+
+function borrarTodoLocal() {
+  if (!confirm('¿Borrar TODOS los datos locales de este browser?')) return;
+  localStorage.removeItem(LOC_KEY);
+  toast('Datos locales borrados','warn');
+  refreshConfig();
+}
+
+// ══ EXPORT ═══════════════════════════════════════════════════════
+function exportCSVUnico() {
+  if (!lastData) return;
+  const d=lastData, v=d.ventas||{}, c=d.cobros||{}, t=d.tarjetas_detalle||{}, g=d.gastos||{};
+  const rows = [['Campo','Valor'],['Fecha',d.fecha||''],['Cajera',d.cajera||''],['Local',d.local||''],['Turno',d.turno||''],
+    ['PIT',v.pit||0],['Cierre Z',v.cierre_z||0],['Accesorios',v.venta_accesorios||0],['Celulares',v.venta_celulares||0],['Venta total',v.venta_total_turno||0],
+    ['Efectivo',c.total_efectivo||0],['Tarjetas',c.total_tarjetas||0],['Transferencias',c.transferencias||0],['OR/Patagway',c.or_patagway||0],['Cuenta DNI',c.cuenta_dni||0],
+    ['Visa Cred',t.visa_credito||0],['Mastercard',t.mastercard||0],['Maestro',t.maestro||0],['Naranja',t.naranja||0],['Visa Deb',t.visa_debito||0],['Amex',t.amex||0],
+    ['Total gastos',g.total_gastos||0],['Subo comision',g.total_subo_comision||0],['Total rendido',d.total_rendido||0],['Diferencia',d.diferencia||0],['Observaciones',d.observaciones||'']];
+  dlCSV('rendicion_'+(d.fecha||'sin_fecha').replace(/\//g,'-')+'.csv', rows);
+}
+
+function exportCSVHistorial() {
+  const lista = getLocal();
+  if (!lista.length) { toast('No hay registros','warn'); return; }
+  const header = ['Fecha','Cajera','Local','Turno','Venta total','Efectivo','Tarjetas','Transferencias','Total rendido','Diferencia'];
+  const rows = lista.map(r => {
+    const v=r.ventas||{}, c=r.cobros||{};
+    return [r.fecha||'',r.cajera||'',r.local||'',r.turno||'',v.venta_total_turno||0,c.total_efectivo||0,c.total_tarjetas||0,c.transferencias||0,r.total_rendido||0,r.diferencia||0];
+  });
+  dlCSV('rendiciones.csv', [header, ...rows]);
+}
+
+function dlCSV(name, rows) {
+  const csv = '\uFEFF' + rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=name; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function copyJSON() {
+  if (!lastData) return;
+  navigator.clipboard.writeText(JSON.stringify(lastData,null,2)).then(()=>toast('JSON copiado','ok'));
+}
+
+// ══ TOAST ════════════════════════════════════════════════════════
+function toast(msg, tipo) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = tipo==='ok'?'#00b87a':tipo==='warn'?'#f5a623':'#ff4d4d';
+  el.style.color = '#000';
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.style.opacity='0', 2800);
+}
+
+// ══ INIT ═════════════════════════════════════════════════════════
+// Precargar config Supabase si no hay una guardada
+(function() {
+  const cfg = getCfg();
+  if (!cfg.url) {
+    saveCfg({ url: 'https://dihhccmimdzcfsjcobgs.supabase.co', key: 'sb_publishable_Sf68jNa72m3UJcsl014Vhg_sFp_BYqD' });
+  }
+})();
+</script>
+</body>
+</html>
