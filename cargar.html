@@ -360,116 +360,82 @@ async function yaExisteRegistro(fecha) {
 }
 
 async function guardar() {
-  var btn;
-  const fechaRaw = document.getElementById('f-fecha').value;
-  if (!fechaRaw) { showErr('Completá la fecha.'); return; }
+  var fechaRaw = document.getElementById('f-fecha').value;
+  if (!fechaRaw) { showErr('Completa la fecha.'); return; }
 
-  // Convertir fecha a DD/MM/AAAA
-  const [y,m,d] = fechaRaw.split('-');
-  const fecha = `${d}/${m}/${y}`;
+  var parts = fechaRaw.split('-');
+  var fecha = parts[2] + '/' + parts[1] + '/' + parts[0];
 
-  // Verificar si ya existe registro para esta fecha y cajera
-  btn = document.getElementById('btn-guardar');
+  var btn = document.getElementById('btn-guardar');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Verificando...';
-  const existe = await yaExisteRegistro(fecha);
+
+  var existe = await yaExisteRegistro(fecha);
   if (existe) {
     btn.disabled = false;
-    btn.textContent = 'Guardar rendición';
-    showErr(`Ya existe una rendición cargada para el ${fecha}. Solo se permite una por día.`);
+    btn.textContent = 'Guardar rendicion';
+    showErr('Ya existe una rendicion cargada para el ' + fecha + '. Solo se permite una por dia.');
     return;
   }
 
-  // Verificar si ya existe un registro para esta cajera en esta fecha
-  btn = document.getElementById('btn-guardar');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Verificando...';
-  try {
-    const check = await fetch(
-      `${SUPA_URL}/rest/v1/rendiciones?fecha=eq.${encodeURIComponent(fecha)}&select=_id`,
-      { headers: supaHdrs() }
-    );
-    if (check.ok) {
-      const existentes = await check.json();
-      if (existentes.length > 0) {
-        showErr(`Ya existe una rendición cargada para el ${fecha}. Solo se permite una por día.`);
-        btn.disabled = false;
-        btn.textContent = 'Guardar rendición';
-        return;
-      }
-    }
-  } catch(e) {
-    // Si falla la verificación, continuar igual
-  }
-  btn.disabled = false;
-  btn.textContent = 'Guardar rendición';
+  btn.innerHTML = '<span class="spinner"></span>Guardando...';
 
-  const _ef = BILLETES.reduce((s,b) => s + (parseInt(document.getElementById('b-'+b).value)||0)*b, 0) - totalGastos();
-  const suma = _ef + v('f-visa-cred') + v('f-visa-deb') +
-    v('f-amex') + v('f-mastercard') + v('f-maestro') + v('f-naranja') +
-    v('f-transf') + v('f-or') + v('f-cdni');
+  var totalEfectivo = BILLETES.reduce(function(s,b) {
+    return s + (parseInt(document.getElementById('b-'+b).value)||0)*b;
+  }, 0);
+  var gastos = totalGastos();
+  var efectivoNeto = totalEfectivo - gastos;
 
-  const totalEfectivo = BILLETES.reduce((s,b) => s + (parseInt(document.getElementById('b-'+b).value)||0)*b, 0);
-  const gastos = totalGastos();
-  const efectivoNeto = totalEfectivo - gastos;
-  const billeteDetalle = BILLETES.map(b => ({
-    denominacion: b,
-    cantidad: parseInt(document.getElementById('b-'+b).value)||0,
-    subtotal: (parseInt(document.getElementById('b-'+b).value)||0)*b
-  })).filter(b => b.cantidad > 0);
+  var billeteDetalle = BILLETES.map(function(b) {
+    var cant = parseInt(document.getElementById('b-'+b).value)||0;
+    return { denominacion: b, cantidad: cant, subtotal: cant*b };
+  }).filter(function(b){ return b.cantidad > 0; });
 
-  const row = {
+  var vn = function(id){ return parseFloat(document.getElementById(id).value)||0; };
+
+  var row = {
     _id: Date.now(),
     _guardado: new Date().toISOString(),
-    fecha,
+    fecha: fecha,
     cajera: usuarioActual.nombre,
     efectivo_total: efectivoNeto,
     efectivo_bruto: totalEfectivo,
     gastos: gastos,
-    gastos_desc: gastoItems.filter(g=>g.monto>0).map(g=>`${g.desc||'sin desc'}: $${g.monto}`).join(' | ')||null,
+    gastos_desc: gastoItems.filter(function(g){return g.monto>0;}).map(function(g){return (g.desc||'sin desc')+': $'+g.monto;}).join(' | ')||null,
     billetes: JSON.stringify(billeteDetalle),
-    visa_credito:   v('f-visa-cred'),
-    visa_debito:    v('f-visa-deb'),
-    amex:           v('f-amex'),
-    mastercard:     v('f-mastercard'),
-    maestro:        v('f-maestro'),
-    naranja:        v('f-naranja'),
-    transferencias: v('f-transf'),
-    or_patagway:    v('f-or'),
-    cuenta_dni:     v('f-cdni'),
-    total_general:  v('f-total') || suma,
+    visa_credito:   vn('f-visa-cred'),
+    visa_debito:    vn('f-visa-deb'),
+    amex:           vn('f-amex'),
+    mastercard:     vn('f-mastercard'),
+    maestro:        vn('f-maestro'),
+    naranja:        vn('f-naranja'),
+    transferencias: vn('f-transf'),
+    or_patagway:    vn('f-or'),
+    cuenta_dni:     vn('f-cdni'),
+    total_general:  vn('f-total') || (efectivoNeto + vn('f-visa-cred') + vn('f-visa-deb') + vn('f-amex') + vn('f-mastercard') + vn('f-maestro') + vn('f-naranja') + vn('f-transf') + vn('f-or') + vn('f-cdni')),
     observaciones:  document.getElementById('f-obs').value.trim()||null,
   };
 
-  btn.innerHTML = '<span class="spinner"></span>Guardando...';
-
-  const ok = await supaGuardar(row);
+  var ok = await supaGuardar(row);
 
   btn.disabled = false;
-  btn.textContent = 'Guardar rendición';
+  btn.textContent = 'Guardar rendicion';
 
   if (ok) {
-    toast('Rendición guardada ✓', 'ok');
-    // Limpiar campos numéricos
-    [...BILLETES.map(b=>'b-'+b),
-     'f-gastos','f-visa-cred','f-visa-deb','f-amex','f-mastercard',
-     'f-maestro','f-naranja','f-transf','f-or','f-cdni','f-total'].forEach(id => {
-      document.getElementById(id).value = 0;
-    });
-    gastoItems = [];
-    gastoId = 0;
-    renderGastos();
+    toast('Rendicion guardada ✓', 'ok');
+    BILLETES.forEach(function(b){ document.getElementById('b-'+b).value = 0; document.getElementById('s-'+b).textContent = '$ 0'; });
+    ['f-visa-cred','f-visa-deb','f-amex','f-mastercard','f-maestro','f-naranja','f-transf','f-or','f-cdni','f-total'].forEach(function(id){ document.getElementById(id).value = 0; });
+    gastoItems = []; gastoId = 0; renderGastos();
     document.getElementById('f-obs').value = '';
-    BILLETES.forEach(b => document.getElementById('s-'+b).textContent = '$ 0');
     document.getElementById('total-efectivo').textContent = '$ 0';
     document.getElementById('row-efec-neto').style.display = 'none';
-    calcular();
+    document.getElementById('verif').style.display = 'none';
     document.getElementById('form-err').style.display = 'none';
+    calcular();
   } else {
-    showErr('Error al guardar. Verificá la conexión e intentá de nuevo.');
+    showErr('Error al guardar. Verifica la conexion e intenta de nuevo.');
   }
 }
-
 function showErr(msg) {
   const el = document.getElementById('form-err');
   el.textContent = msg;
@@ -488,14 +454,28 @@ function toast(msg, tipo) {
 
 // ══ INIT ═════════════════════════════════════════════════════════
 (function() {
-  const saved = sessionStorage.getItem('rdcaja_user');
+  // Verificar si viene del index con sesión de admin
+  var adminSesion = sessionStorage.getItem('rdcaja_admin');
+  if (adminSesion) {
+    var u = JSON.parse(adminSesion);
+    if (!u.admin) {
+      usuarioActual = { nombre: u.nombre, user: u.user, admin: false };
+      sessionStorage.setItem('rdcaja_user', JSON.stringify(usuarioActual));
+      mostrarForm();
+      return;
+    }
+  }
+  // Verificar sesión propia de cargar.html
+  var saved = sessionStorage.getItem('rdcaja_user');
   if (saved) {
     usuarioActual = JSON.parse(saved);
     mostrarForm();
+    return;
   }
-  // Enter en login
-  document.getElementById('l-pass').addEventListener('keydown', e => {
-    if (e.key === 'Enter') login();
+  // Sin sesión: mostrar login
+  document.getElementById('login-section').style.display = 'block';
+  document.getElementById('l-pass').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doLogin();
   });
 })();
 </script>
