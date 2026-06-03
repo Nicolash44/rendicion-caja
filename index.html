@@ -230,30 +230,30 @@
     <div class="cfg-card">
       <div class="card-title">SQL — crear tabla (una sola vez)</div>
       <p style="font-size:0.8rem;color:var(--text2);margin-bottom:0.75rem">Corré esto en el SQL Editor de Supabase:</p>
-      <pre class="sql" id="sql-pre">create table rendiciones (
+      <pre class="sql" id="sql-pre">-- Corré esto si es la primera vez:
+create table if not exists rendiciones (
   _id bigint primary key,
-  fecha text, cajera text, local text, turno text,
-  pit numeric default 0, cierre_z numeric default 0,
-  nota_credito numeric default 0,
-  venta_accesorios numeric default 0,
-  venta_celulares numeric default 0,
-  venta_total numeric default 0,
-  efectivo numeric default 0, tarjetas numeric default 0,
+  fecha text, cajera text,
+  efectivo_total numeric default 0,
+  visa_credito numeric default 0,
+  visa_debito numeric default 0,
+  amex numeric default 0,
+  mastercard numeric default 0,
+  maestro numeric default 0,
+  naranja numeric default 0,
   transferencias numeric default 0,
   or_patagway numeric default 0,
   cuenta_dni numeric default 0,
-  visa_credito numeric default 0,
-  mastercard numeric default 0, maestro numeric default 0,
-  naranja numeric default 0, visa_debito numeric default 0,
-  amex numeric default 0, total_gastos numeric default 0,
-  subo_comision numeric default 0,
-  total_rendido numeric default 0,
-  diferencia numeric default 0,
-  observaciones text, _guardado text
+  total_general numeric default 0,
+  _guardado text
 );
 alter table rendiciones enable row level security;
 create policy "acceso anonimo" on rendiciones
-  for all using (true) with check (true);</pre>
+  for all using (true) with check (true);
+
+-- Si ya tenías la tabla vieja, corré esto en su lugar:
+-- drop table rendiciones;
+-- y volvé a crear con el CREATE de arriba.</pre>
       <button class="btn" style="margin-top:0.6rem"
         onclick="navigator.clipboard.writeText(document.getElementById('sql-pre').textContent).then(()=>toast('SQL copiado','ok'))">
         Copiar SQL
