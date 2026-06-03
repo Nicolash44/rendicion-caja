@@ -130,12 +130,12 @@
       </div>
     </div>
 
-    <div class="card" id="card-gastos">
+    <div class="card" id="card+gastos">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
         Gastos <span style="font-size:0.7rem;color:var(--text3)">(se restan del efectivo)</span>
         <button onclick="agregarGasto()" style="font-family:var(--mono);font-size:0.72rem;padding:2px 10px;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer">+ Agregar</button>
       </div>
-      <div id="lista-gastos"></div>
+      <div id="lista+gastos"></div>
       <div class="total+row">
         <span>Total gastos</span>
         <span style="font-family:var(--mono);font-size:0.95rem;color:var(--danger)" id="total+gastos">$ 0</span>
@@ -282,7 +282,7 @@ function eliminarGasto(id) {
 }
 
 function renderGastos() {
-  const lista = document.getElementById('lista-gastos');
+  const lista = document.getElementById('lista+gastos');
   if (!gastoItems.length) {
     lista.innerHTML = '<div style="font-family:var(--mono);font-size:0.78rem;color:var(--text3);padding:0.4rem 0">Sin gastos cargados.</div>';
     return;
