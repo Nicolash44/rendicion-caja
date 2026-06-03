@@ -92,7 +92,7 @@
         <label>Contraseña</label>
         <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
       </div>
-      <button class="btn primary" onclick="login()">Entrar</button>
+      <button class="btn primary" onclick="doLogin()">Entrar</button>
       <div class="err" id="login-err">Usuario o contraseña incorrectos.</div>
     </div>
   </div>
@@ -224,7 +224,7 @@ async function supaGuardar(row) {
 // ══ SESION ═══════════════════════════════════════════════════════
 let usuarioActual = null;
 
-function login() {
+function doLogin() {
   const user = document.getElementById('l-user').value.trim().toLowerCase();
   const pass = document.getElementById('l-pass').value.trim();
   const u = USUARIOS[user];
@@ -360,6 +360,7 @@ async function yaExisteRegistro(fecha) {
 }
 
 async function guardar() {
+  var btn;
   const fechaRaw = document.getElementById('f-fecha').value;
   if (!fechaRaw) { showErr('Completá la fecha.'); return; }
 
@@ -368,7 +369,7 @@ async function guardar() {
   const fecha = `${d}/${m}/${y}`;
 
   // Verificar si ya existe registro para esta fecha y cajera
-  const btn = document.getElementById('btn-guardar');
+  btn = document.getElementById('btn-guardar');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Verificando...';
   const existe = await yaExisteRegistro(fecha);
@@ -380,7 +381,7 @@ async function guardar() {
   }
 
   // Verificar si ya existe un registro para esta cajera en esta fecha
-  const btn = document.getElementById('btn-guardar');
+  btn = document.getElementById('btn-guardar');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Verificando...';
   try {
