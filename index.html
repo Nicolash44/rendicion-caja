@@ -127,19 +127,21 @@ function doLogin() {
   var user = document.getElementById('l-user').value.trim().toLowerCase();
   var pass = document.getElementById('l-pass').value.trim();
   var u = USUARIOS[user];
-  if (!u || u.pass !== pass) { document.getElementById('l-err').style.display='block'; return; }
+  if (!u || u.pass !== pass) {
+    document.getElementById('l-err').style.display = 'block';
+    return;
+  }
   sessionStorage.setItem('rdcaja_admin', JSON.stringify({user:user, nombre:u.nombre, admin:u.admin}));
   if (!u.admin) {
     window.location.href = 'cargar.html';
-    return;
+  } else {
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('user-badge').textContent = u.nombre + ' · Salir';
   }
-  document.getElementById('login-overlay').style.display='none';
-  document.getElementById('user-badge').textContent = u.nombre + ' · Salir';
 }
 function doLogout() {
   sessionStorage.removeItem('rdcaja_admin');
-  document.getElementById('login-overlay').style.display='flex';
-  document.getElementById('user-badge').textContent = '— Salir';
+  window.location.href = 'index.html';
 }
 </script>
 </head>
