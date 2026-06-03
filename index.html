@@ -189,9 +189,9 @@
       <table class="htable" id="htable">
         <thead><tr>
           <th onclick="sortBy('fecha')">Fecha ↕</th>
+          <th onclick="sortBy('cajera')">Cajera ↕</th>
           <th onclick="sortBy('efectivo')">Efectivo ↕</th>
-          <th onclick="sortBy('visa_credito')">Visa Créd ↕</th>
-          <th onclick="sortBy('mastercard')">Mastercard ↕</th>
+          <th onclick="sortBy('tarjetas')">Tarjetas ↕</th>
           <th onclick="sortBy('transferencias')">Transfer ↕</th>
           <th onclick="sortBy('total')">Total ↕</th>
           <th></th>
@@ -425,6 +425,8 @@ INSTRUCCIONES MUY IMPORTANTES:
 
 1. FECHA: está en el encabezado arriba a la derecha, campo "FECHA". El formato es DD/MM/AAAA. En este formulario la fecha es 21/05/2026. Puede verse borrosa o con puntos entre los números — igualmente leela como fecha completa.
 
+1b. CAJERA: está en el encabezado, campo "CAJERA". Leé solo la primera palabra manuscrita. En este formulario es "MALENA". El número que aparece después (como 1362) NO es el nombre, ignoralo.
+
 2. EFECTIVOS PESOS: tabla en la parte derecha del formulario. Tiene columnas "Efectivo" (denominación), "Cant." y "Subtol.". El valor que necesitás es el TOTAL de esa tabla (suma de todos los subtotales). En este formulario ese total es 84000.
 
 3. TABLA DE TARJETAS: está en la parte inferior izquierda. Tiene 3 columnas: CUP, LOTE y TOTAL.
@@ -450,7 +452,7 @@ Usá esos valores como referencia para entender la estructura. Ahora extraé los
 Devolvé exactamente este JSON con los valores reales del documento:
 {
   "fecha": "DD/MM/AAAA",
-  "cajera": "primera palabra del campo CAJERA — en este formulario de ejemplo es MALENA",
+  "cajera": "primera palabra escrita a mano en el campo CAJERA del encabezado. Ejemplos posibles: MALENA, SOFIA, LILIANA. En este formulario es MALENA",
   "efectivo_total": 0,
   "visa_credito": 0,
   "visa_debito": 0,
@@ -619,29 +621,27 @@ async function renderHistorial() {
   lista.sort((a,b) => {
     let va,vb;
     if (sortCol==='fecha') { va=fechaSort(a.fecha); vb=fechaSort(b.fecha); }
+    else if (sortCol==='cajera') { va=a.cajera||''; vb=b.cajera||''; }
     else if (sortCol==='efectivo') { va=a.efectivo_total||0; vb=b.efectivo_total||0; }
-    else if (sortCol==='visa_credito') { va=a.visa_credito||0; vb=b.visa_credito||0; }
-    else if (sortCol==='mastercard') { va=a.mastercard||0; vb=b.mastercard||0; }
-    else if (sortCol==='transferencias') { va=a.transferencias||0; vb=b.transferencias||0; }
+    else if (sortCol==='tarjetas') { va=(a.visa_credito||0)+(a.visa_debito||0)+(a.amex||0)+(a.mastercard||0)+(a.maestro||0)+(a.naranja||0); vb=(b.visa_credito||0)+(b.visa_debito||0)+(b.amex||0)+(b.mastercard||0)+(b.maestro||0)+(b.naranja||0); }
+    else if (sortCol==='transferencias') { va=(a.transferencias||0)+(a.or_patagway||0)+(a.cuenta_dni||0); vb=(b.transferencias||0)+(b.or_patagway||0)+(b.cuenta_dni||0); }
     else if (sortCol==='total') { va=a.total_general||0; vb=b.total_general||0; }
     return va<vb?-sortDir:va>vb?sortDir:0;
   });
 
   // totales
-  const te = lista.reduce((s,r)=>s+(r.efectivo_total||0),0);
-  const tvc = lista.reduce((s,r)=>s+(r.visa_credito||0),0);
-  const tvd = lista.reduce((s,r)=>s+(r.visa_debito||0),0);
-  const tmc = lista.reduce((s,r)=>s+(r.mastercard||0),0);
-  const ttr = lista.reduce((s,r)=>s+(r.transferencias||0),0);
-  const ttg = lista.reduce((s,r)=>s+(r.total_general||0),0);
+  const te   = lista.reduce((s,r)=>s+(r.efectivo_total||0),0);
+  const ttarj = lista.reduce((s,r)=>s+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0),0);
+  const ttr  = lista.reduce((s,r)=>s+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0),0);
+  const ttg  = lista.reduce((s,r)=>s+(r.total_general||0),0);
+  const ndif = lista.filter(r=>{ const sm=(r.efectivo_total||0)+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0)+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0); return Math.abs(sm-(r.total_general||0))>=10; }).length;
   document.getElementById('totals-grid').innerHTML = `
     <div class="tc"><div class="tc-l">Registros</div><div class="tc-v">${lista.length}</div></div>
-    <div class="tc"><div class="tc-l">Total general</div><div class="tc-v">${money(ttg)}</div></div>
+    <div class="tc"><div class="tc-l">Total acumulado</div><div class="tc-v">${money(ttg)}</div></div>
     <div class="tc"><div class="tc-l">Efectivo</div><div class="tc-v">${money(te)}</div></div>
-    <div class="tc"><div class="tc-l">Visa Crédito</div><div class="tc-v">${money(tvc)}</div></div>
-    <div class="tc"><div class="tc-l">Visa Débito</div><div class="tc-v">${money(tvd)}</div></div>
-    <div class="tc"><div class="tc-l">Mastercard</div><div class="tc-v">${money(tmc)}</div></div>
-    <div class="tc"><div class="tc-l">Transferencias</div><div class="tc-v">${money(ttr)}</div></div>`;
+    <div class="tc"><div class="tc-l">Tarjetas</div><div class="tc-v">${money(ttarj)}</div></div>
+    <div class="tc"><div class="tc-l">Transfer + QR</div><div class="tc-v">${money(ttr)}</div></div>
+    <div class="tc" style="border-color:${ndif>0?'var(--danger)':'var(--accent)'}"><div class="tc-l">Con diferencia</div><div class="tc-v ${ndif>0?'neg':''}">${ndif}</div></div>`;
 
   const tbody = document.getElementById('hist-body');
   const empty = document.getElementById('hist-empty');
@@ -654,12 +654,16 @@ async function renderHistorial() {
     const ds = diff>0?'+ '+money(diff):money(diff);
     const tr2 = document.createElement('tr');
     tr2.onclick = () => openModal(r);
+    const tarjetas = (r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0);
+    const sumaMedios = (r.efectivo_total||0)+tarjetas+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0);
+    const cuadra = Math.abs(sumaMedios-(r.total_general||0)) < 10;
     tr2.innerHTML = `<td>${r.fecha||'—'}</td>
+      <td>${r.cajera||'—'}</td>
       <td class="ac">${money(r.efectivo_total)}</td>
-      <td class="ac">${money(r.visa_credito)}</td>
-      <td class="ac">${money(r.mastercard)}</td>
+      <td class="ac">${money(tarjetas)}</td>
       <td class="ac">${money(r.transferencias)}</td>
       <td class="ac">${money(r.total_general)}</td>
+      <td style="color:${cuadra?'var(--accent)':'var(--danger)'}">${cuadra?'✓':'⚠'}</td>
       <td><button class="btn" style="font-size:11px;padding:2px 7px" onclick="event.stopPropagation();eliminar(${r._id})">✕</button></td>`;
     tbody.appendChild(tr2);
   });
