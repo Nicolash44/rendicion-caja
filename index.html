@@ -197,19 +197,19 @@
         <div class="card">
           <div class="card-title">Cobros</div>
           <div class="kv"><span class="kv-k">Efectivo</span><span class="kv-v ac" id="r-efec">—</span></div>
-          <div class="kv"><span class="kv-k">Tarjetas</span><span class="kv-v ac" id="r-tarj">—</span></div>
           <div class="kv"><span class="kv-k">Transferencias</span><span class="kv-v ac" id="r-transf">—</span></div>
-          <div class="kv"><span class="kv-k">OR/Patagway</span><span class="kv-v ac" id="r-or">—</span></div>
+          <div class="kv"><span class="kv-k">OR Payway</span><span class="kv-v ac" id="r-or">—</span></div>
           <div class="kv"><span class="kv-k">Cuenta DNI</span><span class="kv-v ac" id="r-cdni">—</span></div>
+          <div class="kv"><span class="kv-k">Total tarjetas</span><span class="kv-v ac" id="r-tarj">—</span></div>
         </div>
         <div class="card">
-          <div class="card-title">Tarjetas detalle</div>
+          <div class="card-title">Tarjetas</div>
           <div class="kv"><span class="kv-k">Visa Crédito</span><span class="kv-v ac" id="r-visa">—</span></div>
+          <div class="kv"><span class="kv-k">Visa Débito</span><span class="kv-v ac" id="r-vdeb">—</span></div>
+          <div class="kv"><span class="kv-k">Amex</span><span class="kv-v ac" id="r-amex">—</span></div>
           <div class="kv"><span class="kv-k">Mastercard</span><span class="kv-v ac" id="r-mc">—</span></div>
           <div class="kv"><span class="kv-k">Maestro</span><span class="kv-v ac" id="r-maestro">—</span></div>
           <div class="kv"><span class="kv-k">Naranja</span><span class="kv-v ac" id="r-naranja">—</span></div>
-          <div class="kv"><span class="kv-k">Visa Débito</span><span class="kv-v ac" id="r-vdeb">—</span></div>
-          <div class="kv"><span class="kv-k">Amex</span><span class="kv-v ac" id="r-amex">—</span></div>
         </div>
         <div class="card">
           <div class="card-title">Gastos / Subo</div>
@@ -396,7 +396,7 @@ function setLocal(d) { localStorage.setItem(LOC_KEY, JSON.stringify(d)); }
 
 // ══ FLATTEN / UNFLATTEN ══════════════════════════════════════════
 function flatten(d) {
-  const v=d.ventas||{}, c=d.cobros||{}, t=d.tarjetas_detalle||{}, g=d.gastos||{};
+  const v=d.ventas||{}, c=d.cobros||{}, t=d.tarjetas_detalle||d.cobros||{}, g=d.gastos||{};
   return { _id:d._id, fecha:d.fecha||null, cajera:d.cajera||null, local:d.local||null, turno:d.turno||null,
     pit:v.pit||0, cierre_z:v.cierre_z||0, nota_credito:v.nota_credito||0,
     venta_accesorios:v.venta_accesorios||0, venta_celulares:v.venta_celulares||0, venta_total:v.venta_total_turno||0,
@@ -480,24 +480,70 @@ async function scan() {
   document.getElementById('results').style.display = 'none';
   document.getElementById('err-box').style.display = 'none';
 
-  const prompt = `Sos un extractor de RENDICIÓN DE CAJA argentina. Respondé ÚNICAMENTE con JSON válido sin markdown ni texto adicional.
+  const prompt = `Sos un extractor de RENDICIÓN DE CAJA de una tienda de telefonía argentina. Respondé ÚNICAMENTE con JSON válido sin markdown ni texto adicional.
 
-INSTRUCCIONES ESPECÍFICAS:
-- EFECTIVOS PESOS: hay una tabla con columnas "Efectivo" (denominación del billete), "Cant." (cantidad) y "Subtotal". Multiplicá denominación × cantidad para cada fila y sumá todos los subtotales para obtener total_efectivo.
-- TARJETAS: hay una tabla con filas por marca (Visa Crédito, Mastercard, Maestro, Naranja, Amex, Visa Débito). Cada fila tiene columnas CUP, LOTE y TOTAL. Tomá el valor TOTAL de cada fila para cada marca.
-- El campo "total_efectivo" en cobros debe ser la suma de todos los billetes (denominación × cantidad).
-- El campo "total_tarjetas" debe ser la suma de todas las marcas de tarjeta.
+ESTRUCTURA DEL FORMULARIO:
+1. ENCABEZADO: fecha, cajera, local, turno, saldo inicio
+2. VENTAS (columna Importe): PIT, CIERRE Z (FC), NOTA DE CREDITO (NC), Venta CELULARES, Venta ACCESORIOS, VENTA TOTAL TURNO
+3. EFECTIVOS PESOS: tabla con columnas Efectivo (denominación: 20000, 10000, 2000, 1000, 500, 200, 100, 50, 20) × Cant. = Subtotal. Sumá todos los subtotales para total_efectivo.
+4. TARJETAS: tabla con filas VISA CREDITO, VISA DEBITO, AMEX, MASTERCARD, MAESTRO, NARANJA. Cada fila tiene CUP, LOTE y TOTAL. Tomá el valor de la columna TOTAL para cada una. Si la fila está vacía vale 0.
+5. DEBAJO DE TARJETAS (columna TOTAL): TRANSFERENCIAS, OR PAYWAY, CUENTA DNI. Si están vacíos valen 0.
+6. CIERRE: TOTAL GASTOS, TOTAL Sdos y Com., TOTAL TARJETAS Turno, TOTAL RENDIDO, DIFERENCIA
+7. OBSERVACIONES: texto manuscrito al costado izquierdo
+
+REGLAS:
+- Todos los campos de tarjetas DEBEN existir aunque valgan 0
+- TRANSFERENCIAS, OR PAYWAY y CUENTA DNI DEBEN existir aunque valgan 0
+- Para efectivo: multiplicá denominación × cantidad de cada fila, sumá todo = total_efectivo
+- Si un valor no se lee claramente, poné 0
 
 {
-  "fecha":"DD/MM/AAAA","cajera":"nombre","local":"nombre","turno":"texto","saldo_inicio":0,
-  "ventas":{"pit":0,"cierre_z":0,"nota_credito":0,"venta_accesorios":0,"venta_celulares":0,"venta_total_turno":0},
-  "cobros":{"total_efectivo":0,"total_tarjetas":0,"transferencias":0,"or_patagway":0,"cuenta_dni":0},
-  "tarjetas_detalle":{"visa_credito":0,"mastercard":0,"maestro":0,"naranja":0,"visa_debito":0,"amex":0},
-  "efectivo_detalle":[{"denominacion":0,"cantidad":0,"subtotal":0}],
-  "gastos":{"total_gastos":0,"total_subo_comision":0,"total_tarjetas_turno":0},
-  "total_rendido":0,"diferencia":0,"observaciones":"texto o null"
-}
-Si un campo no existe o no se lee, usar null para texto y 0 para números. Extraé todos los valores del documento.`;
+  "fecha":"DD/MM/AAAA",
+  "cajera":"nombre",
+  "local":"nombre del local",
+  "turno":"ÚNICO/MAÑANA/TARDE/NOCHE",
+  "saldo_inicio":0,
+  "ventas":{
+    "pit":0,
+    "cierre_z":0,
+    "nota_credito":0,
+    "venta_accesorios":0,
+    "venta_celulares":0,
+    "venta_total_turno":0
+  },
+  "efectivo_detalle":[
+    {"denominacion":20000,"cantidad":0,"subtotal":0},
+    {"denominacion":10000,"cantidad":0,"subtotal":0},
+    {"denominacion":2000,"cantidad":0,"subtotal":0},
+    {"denominacion":1000,"cantidad":0,"subtotal":0},
+    {"denominacion":500,"cantidad":0,"subtotal":0},
+    {"denominacion":200,"cantidad":0,"subtotal":0},
+    {"denominacion":100,"cantidad":0,"subtotal":0},
+    {"denominacion":50,"cantidad":0,"subtotal":0},
+    {"denominacion":20,"cantidad":0,"subtotal":0}
+  ],
+  "cobros":{
+    "total_efectivo":0,
+    "visa_credito":0,
+    "visa_debito":0,
+    "amex":0,
+    "mastercard":0,
+    "maestro":0,
+    "naranja":0,
+    "total_tarjetas":0,
+    "transferencias":0,
+    "or_patagway":0,
+    "cuenta_dni":0
+  },
+  "gastos":{
+    "total_gastos":0,
+    "total_subo_comision":0,
+    "total_tarjetas_turno":0
+  },
+  "total_rendido":0,
+  "diferencia":0,
+  "observaciones":null
+}`;
 
   const ANT_KEY = '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';
 
@@ -546,7 +592,7 @@ function renderResults(d) {
     el.textContent = val;
     if (cls) el.className = 'kv-v ' + cls;
   };
-  const v=d.ventas||{}, c=d.cobros||{}, t=d.tarjetas_detalle||{}, g=d.gastos||{};
+  const v=d.ventas||{}, c=d.cobros||{}, t=d.tarjetas_detalle||d.cobros||{}, g=d.gastos||{};
   set('r-fecha', d.fecha||'—');
   set('r-cajera', d.cajera||'—');
   set('r-local', d.local||'—');
@@ -558,17 +604,19 @@ function renderResults(d) {
   set('r-acc', money(v.venta_accesorios), 'ac');
   set('r-cel', money(v.venta_celulares), 'ac');
   set('r-venta', money(v.venta_total_turno), 'ac');
+  // tarjetas pueden estar en cobros o en tarjetas_detalle
+  const tc = d.tarjetas_detalle || {};
   set('r-efec', money(c.total_efectivo), 'ac');
-  set('r-tarj', money(c.total_tarjetas), 'ac');
   set('r-transf', money(c.transferencias), 'ac');
   set('r-or', money(c.or_patagway), 'ac');
   set('r-cdni', money(c.cuenta_dni), 'ac');
-  set('r-visa', money(t.visa_credito), 'ac');
-  set('r-mc', money(t.mastercard), 'ac');
-  set('r-maestro', money(t.maestro), 'ac');
-  set('r-naranja', money(t.naranja), 'ac');
-  set('r-vdeb', money(t.visa_debito), 'ac');
-  set('r-amex', money(t.amex), 'ac');
+  set('r-tarj', money(c.total_tarjetas), 'ac');
+  set('r-visa', money(c.visa_credito || tc.visa_credito), 'ac');
+  set('r-vdeb', money(c.visa_debito || tc.visa_debito), 'ac');
+  set('r-amex', money(c.amex || tc.amex), 'ac');
+  set('r-mc', money(c.mastercard || tc.mastercard), 'ac');
+  set('r-maestro', money(c.maestro || tc.maestro), 'ac');
+  set('r-naranja', money(c.naranja || tc.naranja), 'ac');
   set('r-gastos', money(g.total_gastos));
   set('r-subo', money(g.total_subo_comision));
   set('r-tt', money(g.total_tarjetas_turno));
