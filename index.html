@@ -129,6 +129,10 @@ function doLogin() {
   var u = USUARIOS[user];
   if (!u || u.pass !== pass) { document.getElementById('l-err').style.display='block'; return; }
   sessionStorage.setItem('rdcaja_admin', JSON.stringify({user:user, nombre:u.nombre, admin:u.admin}));
+  if (!u.admin) {
+    window.location.href = 'cargar.html';
+    return;
+  }
   document.getElementById('login-overlay').style.display='none';
   document.getElementById('user-badge').textContent = u.nombre + ' · Salir';
 }
@@ -608,73 +612,67 @@ REGLA CRÍTICA: para cada tarjeta, el valor es el número de la columna TOTAL (l
 function money(v) { if (!v && v!==0) return '—'; return '$ ' + Number(v).toLocaleString('es-AR'); }
 
 function renderResults(d) {
-  const grid = document.getElementById('results-grid');
-
-  // Calcular suma de medios de pago
-  const sumaMedios = (d.efectivo_total||0) + (d.visa_credito||0) + (d.visa_debito||0) +
+  var grid = document.getElementById('results-grid');
+  var sumaMedios = (d.efectivo_total||0) + (d.visa_credito||0) + (d.visa_debito||0) +
     (d.amex||0) + (d.mastercard||0) + (d.maestro||0) + (d.naranja||0) +
     (d.transferencias||0) + (d.or_patagway||0) + (d.cuenta_dni||0);
-  const totalDoc = d.total_general||0;
-  const diferencia = sumaMedios - totalDoc;
-  const cuadra = Math.abs(diferencia) < 10;
+  var totalDoc = d.total_general||0;
+  var diferencia = sumaMedios - totalDoc;
+  var cuadra = Math.abs(diferencia) < 10;
 
-  grid.innerHTML = `
-    <div class="card">
-      <div class="card-title">Identificación</div>
-      <div class="kv"><span class="kv-k">Fecha</span><span class="kv-v" style="font-size:1rem;font-weight:700">${d.fecha||'—'}</span></div>
-      <div class="kv"><span class="kv-k">Cajera</span><span class="kv-v" style="font-size:1rem;font-weight:700">${d.cajera||'—'}</span></div>
-    </div>
+  var medios = [
+    ['Efectivo',       d.efectivo_total],
+    ['Visa Credito',   d.visa_credito],
+    ['Visa Debito',    d.visa_debito],
+    ['Amex',           d.amex],
+    ['Mastercard',     d.mastercard],
+    ['Maestro',        d.maestro],
+    ['Naranja',        d.naranja],
+    ['Transferencias', d.transferencias],
+    ['OR Payway',      d.or_patagway],
+    ['Cuenta DNI',     d.cuenta_dni],
+  ];
 
-    <div class="card highlight" id="card-total">
-      <div class="card-title">Total del formulario</div>
-      <div class="big-num">${money(totalDoc)}</div>
-      <div style="font-size:0.72rem;color:var(--text2);margin-top:0.3rem">indicado en el formulario</div>
-    </div>
+  var mediosHTML = medios.map(function(item) {
+    var k = item[0], v = item[1]||0;
+    return '<div class="kv"><span class="kv-k">' + k + '</span>' +
+      '<span class="kv-v' + (v>0?' ac':'') + '">' + money(v) + '</span></div>';
+  }).join('');
 
-    <div class="card full">
-      <div class="card-title">Medios de pago</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 1rem">
-        ${[
-          ['Efectivo',       d.efectivo_total],
-          ['Visa Crédito',   d.visa_credito],
-          ['Visa Débito',    d.visa_debito],
-          ['Amex',           d.amex],
-          ['Mastercard',     d.mastercard],
-          ['Maestro',        d.maestro],
-          ['Naranja',        d.naranja],
-          ['Transferencias', d.transferencias],
-          ['OR Payway',      d.or_patagway],
-          ['Cuenta DNI',     d.cuenta_dni],
-        ].map(([k,v]) => `
-          <div class="kv">
-            <span class="kv-k">${k}</span>
-            <span class="kv-v ${v>0?'ac':''}">${money(v)}</span>
-          </div>`).join('')}
-        <div class="kv" style="border-top:1px solid var(--border2);margin-top:0.3rem;padding-top:0.4rem;grid-column:1/-1">
-          <span class="kv-k" style="font-weight:600;color:var(--text)">Suma calculada</span>
-          <span class="kv-v ac" style="font-size:1rem;font-weight:700">${money(sumaMedios)}</span>
-        </div>
-      </div>
-    </div>
+  var difColor = cuadra ? 'var(--accent)' : 'var(--danger)';
+  var difMsg = cuadra
+    ? 'Los valores cuadran (' + money(sumaMedios) + ')'
+    : 'Diferencia: ' + money(Math.abs(diferencia)) + (diferencia>0?' (sobra)':' (falta)') +
+      ' — Suma: ' + money(sumaMedios) + ' / Total: ' + money(totalDoc);
 
-    <div class="card full" style="border-color:${cuadra?'var(--accent)':'var(--danger)'}">
-      <div class="card-title" style="color:${cuadra?'var(--accent)':'var(--danger)'}">
-        ${cuadra ? '✓ Los valores cuadran' : '⚠ Diferencia detectada'}
-      </div>
-      <div style="font-family:var(--mono);font-size:0.9rem;color:${cuadra?'var(--accent)':'var(--danger)'}">
-        ${cuadra
-          ? `Suma de medios (${money(sumaMedios)}) = Total del formulario (${money(totalDoc)})`
-          : `Suma de medios: ${money(sumaMedios)} — Total formulario: ${money(totalDoc)} — Diferencia: ${money(Math.abs(diferencia))} ${diferencia>0?'(sobra)':'(falta)'}`
-        }
-      </div>
-    </div>
-  `;
+  grid.innerHTML =
+    '<div class="card">' +
+      '<div class="card-title">Identificacion</div>' +
+      '<div class="kv"><span class="kv-k">Fecha</span><span class="kv-v" style="font-size:1rem;font-weight:700">' + (d.fecha||'—') + '</span></div>' +
+      '<div class="kv"><span class="kv-k">Cajera</span><span class="kv-v" style="font-size:1rem;font-weight:700">' + (d.cajera||'—') + '</span></div>' +
+    '</div>' +
+    '<div class="card highlight" id="card-total">' +
+      '<div class="card-title">Total del formulario</div>' +
+      '<div class="big-num">' + money(totalDoc) + '</div>' +
+      '<div style="font-size:0.72rem;color:var(--text2);margin-top:0.3rem">indicado en el formulario</div>' +
+    '</div>' +
+    '<div class="card full">' +
+      '<div class="card-title">Medios de pago</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 1rem">' +
+        mediosHTML +
+        '<div class="kv" style="border-top:1px solid var(--border2);margin-top:0.3rem;padding-top:0.4rem;grid-column:1/-1">' +
+          '<span class="kv-k" style="font-weight:600;color:var(--text)">Suma calculada</span>' +
+          '<span class="kv-v ac" style="font-size:1rem;font-weight:700">' + money(sumaMedios) + '</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card full" style="border-color:' + difColor + '">' +
+      '<div class="card-title" style="color:' + difColor + '">' + (cuadra ? 'Los valores cuadran' : 'Diferencia detectada') + '</div>' +
+      '<div style="font-family:var(--mono);font-size:0.85rem;color:' + difColor + '">' + difMsg + '</div>' +
+    '</div>';
+
   document.getElementById('results').style.display = 'block';
 }
-
-// ══ HISTORIAL ════════════════════════════════════════════════════
-let sortCol = 'fecha', sortDir = 1, filtro = {};
-
 function fechaSort(f) {
   if (!f) return '';
   if (f.includes('/')) { const [d,m,y]=f.split('/'); return `${y}-${m}-${d}`; }
@@ -883,26 +881,37 @@ async function confirmarBorrar() {
 function kv2(k,v) { return `<div class="kv"><span class="kv-k">${k}</span><span class="kv-v">${v}</span></div>`; }
 
 function openModal(r) {
-  document.getElementById('modal-title').textContent = `${r.fecha||'—'}`;
-  document.getElementById('modal-body').innerHTML = `
-    <div class="msec"><h4>Fecha</h4>${kv2('Fecha',r.fecha||'—')}</div>
-    <div class="msec"><h4>Efectivo</h4>${kv2('Total efectivo',money(r.efectivo_total))}</div>
-    <div class="msec"><h4>Tarjetas</h4>
-      ${kv2('Visa Crédito',money(r.visa_credito))}
-      ${kv2('Visa Débito',money(r.visa_debito))}
-      ${kv2('Amex',money(r.amex))}
-      ${kv2('Mastercard',money(r.mastercard))}
-      ${kv2('Maestro',money(r.maestro))}
-      ${kv2('Naranja',money(r.naranja))}
-    </div>
-    <div class="msec"><h4>Otros cobros</h4>
-      ${kv2('Transferencias',money(r.transferencias))}
-      ${kv2('OR Payway',money(r.or_patagway))}
-      ${kv2('Cuenta DNI',money(r.cuenta_dni))}
-    </div>
-    <div class="msec"><h4>Total</h4>${kv2('Total general',money(r.total_general))}</div>
-  `;
-    document.getElementById('overlay').classList.add('open');
+  document.getElementById('modal-title').textContent = r.fecha||'—';
+  var tarj = (r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0);
+  var transf = (r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0);
+  var sumaMedios = (r.efectivo_total||0)+tarj+transf;
+  var totalDoc = r.total_general||0;
+  var cuadra = Math.abs(sumaMedios-totalDoc) < 10;
+  var difColor = cuadra ? 'var(--accent)' : 'var(--danger)';
+
+  document.getElementById('modal-body').innerHTML =
+    '<div class="msec"><h4>Identificacion</h4>' + kv2('Fecha',r.fecha||'—') + kv2('Cajera',r.cajera||'—') + '</div>' +
+    '<div class="msec"><h4>Efectivo</h4>' + kv2('Total efectivo',money(r.efectivo_total)) + '</div>' +
+    '<div class="msec"><h4>Tarjetas</h4>' +
+      kv2('Visa Credito',money(r.visa_credito)) +
+      kv2('Visa Debito',money(r.visa_debito)) +
+      kv2('Amex',money(r.amex)) +
+      kv2('Mastercard',money(r.mastercard)) +
+      kv2('Maestro',money(r.maestro)) +
+      kv2('Naranja',money(r.naranja)) +
+    '</div>' +
+    '<div class="msec"><h4>Otros cobros</h4>' +
+      kv2('Transferencias',money(r.transferencias)) +
+      kv2('OR Payway',money(r.or_patagway)) +
+      kv2('Cuenta DNI',money(r.cuenta_dni)) +
+    '</div>' +
+    '<div class="msec"><h4>Total</h4>' +
+      kv2('Total formulario',money(totalDoc)) +
+      kv2('Suma calculada','<span style="color:'+difColor+'">' + money(sumaMedios) + (cuadra?' ✓':' ⚠') + '</span>') +
+    '</div>' +
+    (r.observaciones ? '<div class="msec"><h4>Observaciones</h4><div class="obs-box">' + r.observaciones + '</div></div>' : '');
+
+  document.getElementById('overlay').classList.add('open');
 }
 function closeModal() { document.getElementById('overlay').classList.remove('open'); }
 
