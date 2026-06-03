@@ -225,14 +225,19 @@ async function supaGuardar(row) {
 let usuarioActual = null;
 
 function doLogin() {
-  const user = document.getElementById('l-user').value.trim().toLowerCase();
-  const pass = document.getElementById('l-pass').value.trim();
-  const u = USUARIOS[user];
+  var user = document.getElementById('l-user').value.trim().toLowerCase();
+  var pass = document.getElementById('l-pass').value.trim();
+  var u = USUARIOS[user];
   if (!u || u.pass !== pass) {
     document.getElementById('login-err').style.display = 'block';
     return;
   }
-  usuarioActual = { ...u, user };
+  if (u.admin) {
+    sessionStorage.setItem('rdcaja_admin', JSON.stringify({user:user, nombre:u.nombre, admin:true}));
+    window.location.href = 'index.html';
+    return;
+  }
+  usuarioActual = { nombre: u.nombre, user: user, admin: false };
   sessionStorage.setItem('rdcaja_user', JSON.stringify(usuarioActual));
   mostrarForm();
 }
