@@ -387,6 +387,10 @@ create policy "acceso anonimo" on rendiciones
 <div id="toast"></div>
 
 <script>
+// ══ VARIABLES GLOBALES ═══════════════════════════════════════════
+var sortCol = 'fecha', sortDir = 1, filtro = {};
+var editandoId = null;
+
 // ══ SUPABASE CONFIG ═══════════════════════════════════════════════
 const LOC_KEY = 'rdcaja_data';
 const CFG_KEY = 'rdcaja_cfg';
@@ -783,7 +787,6 @@ async function eliminar(id) {
 }
 
 // ══ EDICIÓN ══════════════════════════════════════════════════════
-let editandoId = null;
 
 const CAMPOS_EDIT = [
   { id: 'fecha',          label: 'Fecha',          tipo: 'text' },
