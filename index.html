@@ -463,7 +463,7 @@ function unflatten(r) { return r; }
 
 // ══ ADD HISTORY ══════════════════════════════════════════════════
 async function addHistory(d) {
-  const entry = { ...d, _id: Date.now(), _guardado: new Date().toISOString() };
+  var entry = Object.assign({}, d, { _id: Date.now(), _guardado: new Date().toISOString() });
   const local = getLocal();
   local.push(entry);
   setLocal(local);
@@ -675,7 +675,7 @@ function renderResults(d) {
 }
 function fechaSort(f) {
   if (!f) return '';
-  if (f.includes('/')) { const [d,m,y]=f.split('/'); return `${y}-${m}-${d}`; }
+  if (f.includes('/')) { var pts=f.split('/'); return pts[2]+'-'+pts[1]+'-'+pts[0]; }
   return f;
 }
 
@@ -703,7 +703,7 @@ async function renderHistorial() {
   }
 
   // poblar cajeras
-  const cajeras = [...new Set(lista.map(r=>r.cajera).filter(Boolean))].sort();
+  var cajeras = Array.from(new Set(lista.map(function(r){return r.cajera;}).filter(Boolean))).sort();
   const sel = document.getElementById('s-cajera');
   const cur = sel.value;
   sel.innerHTML = '<option value="">Todas las cajeras</option>';
@@ -732,13 +732,13 @@ async function renderHistorial() {
   const ttr  = lista.reduce((s,r)=>s+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0),0);
   const ttg  = lista.reduce((s,r)=>s+(r.total_general||0),0);
   const ndif = lista.filter(r=>{ const sm=(r.efectivo_total||0)+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0)+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0); return Math.abs(sm-(r.total_general||0))>=10; }).length;
-  document.getElementById('totals-grid').innerHTML = `
-    <div class="tc"><div class="tc-l">Registros</div><div class="tc-v">${lista.length}</div></div>
-    <div class="tc"><div class="tc-l">Total acumulado</div><div class="tc-v">${money(ttg)}</div></div>
-    <div class="tc"><div class="tc-l">Efectivo</div><div class="tc-v">${money(te)}</div></div>
-    <div class="tc"><div class="tc-l">Tarjetas</div><div class="tc-v">${money(ttarj)}</div></div>
-    <div class="tc"><div class="tc-l">Transfer + QR</div><div class="tc-v">${money(ttr)}</div></div>
-    <div class="tc" style="border-color:${ndif>0?'var(--danger)':'var(--accent)'}"><div class="tc-l">Con diferencia</div><div class="tc-v ${ndif>0?'neg':''}">${ndif}</div></div>`;
+  document.getElementById('totals-grid').innerHTML =
+    '<div class="tc"><div class="tc-l">Registros</div><div class="tc-v">' + lista.length + '</div></div>' +
+    '<div class="tc"><div class="tc-l">Total acumulado</div><div class="tc-v">' + money(ttg) + '</div></div>' +
+    '<div class="tc"><div class="tc-l">Efectivo</div><div class="tc-v">' + money(te) + '</div></div>' +
+    '<div class="tc"><div class="tc-l">Tarjetas</div><div class="tc-v">' + money(ttarj) + '</div></div>' +
+    '<div class="tc"><div class="tc-l">Transfer+QR</div><div class="tc-v">' + money(ttr) + '</div></div>' +
+    '<div class="tc" style="border-color:' + (ndif>0?'var(--danger)':'var(--accent)') + '"><div class="tc-l">Con diferencia</div><div class="tc-v' + (ndif>0?' neg':'') + '">' + ndif + '</div></div>';
 
   const tbody = document.getElementById('hist-body');
   const empty = document.getElementById('hist-empty');
@@ -755,19 +755,20 @@ async function renderHistorial() {
     const sumaMedios = (r.efectivo_total||0)+tarjetas+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0);
     const cuadra = Math.abs(sumaMedios-(r.total_general||0)) < 10;
     const difVal = sumaMedios - (r.total_general||0);
-    tr2.innerHTML = `<td>${r.fecha||'—'}</td>
-      <td>${r.cajera||'—'}</td>
-      <td class="ac">${money(r.efectivo_total)}</td>
-      <td class="ac">${money(tarjetas)}</td>
-      <td class="ac">${money(r.transferencias)}</td>
-      <td class="ac">${money(r.total_general)}</td>
-      <td class="ac" style="color:${cuadra?'var(--accent)':'var(--danger)'}">
-        ${cuadra ? '✓' : money(sumaMedios) + '<br><span style="font-size:10px">' + (difVal>0?'+':'')+money(difVal)+'</span>'}
-      </td>
-      <td style="display:flex;gap:4px">
-        <button class="btn" style="font-size:11px;padding:2px 7px" onclick="event.stopPropagation();abrirEditar(${r._id})">✎</button>
-        <button class="btn" style="font-size:11px;padding:2px 7px;color:var(--danger)" onclick="event.stopPropagation();eliminar(${r._id})">✕</button>
-      </td>\`;
+    tr2.innerHTML =
+      '<td>' + (r.fecha||'—') + '</td>' +
+      '<td>' + (r.cajera||'—') + '</td>' +
+      '<td class="ac">' + money(r.efectivo_total) + '</td>' +
+      '<td class="ac">' + money(tarjetas) + '</td>' +
+      '<td class="ac">' + money(r.transferencias) + '</td>' +
+      '<td class="ac">' + money(r.total_general) + '</td>' +
+      '<td class="ac" style="color:' + (cuadra?'var(--accent)':'var(--danger)') + '">' +
+        (cuadra ? '✓' : money(sumaMedios) + '<br><span style="font-size:10px">' + (difVal>0?'+':'') + money(difVal) + '</span>') +
+      '</td>' +
+      '<td style="display:flex;gap:4px">' +
+        '<button class="btn" style="font-size:11px;padding:2px 7px" onclick="event.stopPropagation();abrirEditar(' + r._id + ')">✎</button>' +
+        '<button class="btn" style="font-size:11px;padding:2px 7px;color:var(--danger)" onclick="event.stopPropagation();eliminar(' + r._id + ')">✕</button>' +
+      '</td>';
     tbody.appendChild(tr2);
   });
 }
@@ -837,24 +838,32 @@ function closeEdit() {
 async function guardarEdicion() {
   if (!editandoId) return;
 
-  const updates = {};
-  CAMPOS_EDIT.forEach(c => {
-    const el = document.getElementById('edit-' + c.id);
+  var updates = {};
+  CAMPOS_EDIT.forEach(function(c) {
+    var el = document.getElementById('edit-' + c.id);
     updates[c.id] = c.tipo === 'number' ? (parseFloat(el.value)||0) : (el.value.trim()||null);
   });
   updates._id = editandoId;
 
-  // Actualizar local
-  const lista = getLocal().map(r => r._id === editandoId ? { ...r, ...updates } : r);
+  var lista = getLocal().map(function(r) {
+    if (r._id === editandoId) {
+      var merged = {};
+      Object.keys(r).forEach(function(k){ merged[k] = r[k]; });
+      Object.keys(updates).forEach(function(k){ merged[k] = updates[k]; });
+      return merged;
+    }
+    return r;
+  });
   setLocal(lista);
 
-  // Actualizar Supabase
-  const base = supaBase();
+  var base = supaBase();
   if (base) {
     try {
-      const r = await fetch(`${base}/rest/v1/rendiciones?_id=eq.${editandoId}`, {
+      var hdrs = supaHdrs();
+      hdrs['Prefer'] = 'return=minimal';
+      var r = await fetch(base + '/rest/v1/rendiciones?_id=eq.' + editandoId, {
         method: 'PATCH',
-        headers: { ...supaHdrs(), 'Prefer': 'return=minimal' },
+        headers: hdrs,
         body: JSON.stringify(updates)
       });
       if (!r.ok) throw new Error();
@@ -869,7 +878,6 @@ async function guardarEdicion() {
   closeEdit();
   renderHistorial();
 }
-
 async function confirmarBorrar() {
   if (!editandoId) return;
   if (!confirm('¿Borrar este registro? No se puede deshacer.')) return;
@@ -878,7 +886,7 @@ async function confirmarBorrar() {
 }
 
 // ══ MODAL ════════════════════════════════════════════════════════
-function kv2(k,v) { return `<div class="kv"><span class="kv-k">${k}</span><span class="kv-v">${v}</span></div>`; }
+function kv2(k,v) { return '<div class="kv"><span class="kv-k">' + k + '</span><span class="kv-v">' + v + '</span></div>'; }
 
 function openModal(r) {
   document.getElementById('modal-title').textContent = r.fecha||'—';
@@ -992,11 +1000,11 @@ function exportCSVHistorial() {
     const v=r.ventas||{}, c=r.cobros||{};
     return [r.fecha||'',r.cajera||'',r.local||'',r.turno||'',v.venta_total_turno||0,c.total_efectivo||0,c.total_tarjetas||0,c.transferencias||0,r.total_rendido||0,r.diferencia||0];
   });
-  dlCSV('rendiciones.csv', [header, ...rows]);
+  dlCSV('rendiciones.csv', [header].concat(rows));
 }
 
 function dlCSV(name, rows) {
-  const csv = '\uFEFF' + rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+  var csv = '\uFEFF' + rows.map(function(r){return r.map(function(x){return '"'+String(x).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
   const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href=url; a.download=name; a.click();
@@ -1022,7 +1030,7 @@ function toast(msg, tipo) {
 // ══ ANÁLISIS ═════════════════════════════════════════════════════
 function fechaSort(f) {
   if (!f) return '';
-  if (f.includes('/')) { const [d,m,y]=f.split('/'); return `${y}-${m}-${d}`; }
+  if (f.includes('/')) { var pts=f.split('/'); return pts[2]+'-'+pts[1]+'-'+pts[0]; }
   return f;
 }
 
@@ -1043,7 +1051,7 @@ async function renderAnalisis() {
     lista = getLocal();
   }
 
-  var cajeras = [...new Set(lista.map(function(r){ return r.cajera; }).filter(Boolean))].sort();
+  var cajeras = Array.from(new Set(lista.map(function(r){ return r.cajera; }).filter(Boolean))).sort();
   var sel = document.getElementById('an-cajera');
   var cur = sel.value;
   sel.innerHTML = '<option value="">Todas las cajeras</option>';
