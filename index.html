@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rendición de Caja — Scanner IA</title>
+<style>
+  :root {
+    --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #222;
+    --border: #2a2a2a; --border2: #333;
+    --accent: #00e5a0; --accent2: #00b87a;
+    --warn: #f5a623; --danger: #ff4d4d;
+    --text: #e8e8e8; --text2: #888; --text3: #555;
+    --mono: 'Courier New', monospace;
+    --sans: system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; padding: 1.5rem 1rem; }
+
+  header { max-width: 860px; margin: 0 auto 1.5rem; display: flex; align-items: baseline; gap: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+  header h1 { font-family: var(--mono); font-size: 1rem; font-weight: 700; color: var(--accent); }
+  header span { font-size: 0.75rem; color: var(--text3); font-family: var(--mono); }
+
+  .container { max-width: 860px; margin: 0 auto; }
+
+  /* TABS */
+  .tab-nav { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+  .tab-nav button { font-family: var(--mono); font-size: 0.78rem; padding: 0.55rem 1.1rem; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text3); cursor: pointer; margin-bottom: -1px; transition: all 0.15s; }
+  .tab-nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* UPLOAD */
+  .upload-area { border: 1px dashed var(--border2); border-radius: 8px; padding: 2.5rem 1rem; text-align: center; cursor: pointer; background: var(--surface); margin-bottom: 1.25rem; transition: all 0.15s; }
+  .upload-area:hover, .upload-area.drag { border-color: var(--accent); background: rgba(0,229,160,0.04); }
+  .upload-area p { font-size: 0.9rem; color: var(--text2); margin-top: 0.4rem; }
+  #file-in { display: none; }
+
+  /* PREVIEW BAR */
+  .preview-bar { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .preview-bar img { height: 72px; border-radius: 4px; border: 1px solid var(--border2); }
+  .preview-bar .fi { flex: 1; min-width: 120px; }
+  .preview-bar .fi strong { font-size: 0.88rem; display: block; }
+  .preview-bar .fi span { font-size: 0.75rem; color: var(--text2); font-family: var(--mono); }
+
+  /* BUTTONS */
+  .btn { font-family: var(--mono); font-size: 0.8rem; padding: 0.5rem 1.1rem; border-radius: 4px; border: 1px solid var(--border2); background: transparent; color: var(--text); cursor: pointer; transition: all 0.15s; }
+  .btn:hover { border-color: var(--text2); }
+  .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+  .btn.primary:hover { background: var(--accent2); }
+  .btn.primary:disabled { background: var(--text3); border-color: var(--text3); color: #666; cursor: not-allowed; }
+  .btn-row { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+
+  /* STATUS */
+  .status { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.25rem; text-align: center; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ERROR */
+  .err-box { display: none; background: rgba(255,77,77,0.08); border: 1px solid rgba(255,77,77,0.3); border-radius: 8px; padding: 0.9rem 1.1rem; font-size: 0.84rem; color: var(--danger); margin-bottom: 1rem; line-height: 1.6; }
+
+  /* DATA CARDS */
+  .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+  @media(max-width:580px){ .data-grid { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem 1.25rem; }
+  .card.full { grid-column: 1/-1; }
+  .card.highlight { border-color: var(--accent); }
+  .card.danger { border-color: var(--danger); }
+  .card-title { font-family: var(--mono); font-size: 0.68rem; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.7rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+  .kv { display: flex; justify-content: space-between; align-items: baseline; padding: 0.28rem 0; font-size: 0.83rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .kv:last-child { border: none; }
+  .kv-k { color: var(--text2); font-size: 0.78rem; }
+  .kv-v { font-family: var(--mono); font-weight: 500; }
+  .kv-v.ac { color: var(--accent); }
+  .big-num { font-family: var(--mono); font-size: 1.9rem; font-weight: 700; color: var(--accent); margin: 0.4rem 0 0.2rem; }
+  .obs-box { background: rgba(245,166,35,0.06); border: 1px solid rgba(245,166,35,0.2); border-radius: 6px; padding: 0.7rem 0.9rem; font-size: 0.84rem; color: var(--warn); font-style: italic; line-height: 1.6; }
+
+  /* HISTORIAL */
+  .search-bar { display: flex; gap: 0.6rem; margin-bottom: 1.1rem; flex-wrap: wrap; align-items: center; }
+  .search-bar input, .search-bar select { font-family: var(--mono); font-size: 0.8rem; background: var(--surface); border: 1px solid var(--border2); color: var(--text); border-radius: 4px; padding: 0.42rem 0.7rem; }
+  .search-bar input[type=date] { min-width: 130px; }
+  .totals-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(130px,1fr)); gap: 0.6rem; margin-bottom: 1.1rem; }
+  .tc { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.8rem; }
+  .tc-l { font-size: 0.65rem; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.3rem; }
+  .tc-v { font-size: 1rem; font-weight: 700; font-family: var(--mono); color: var(--accent); }
+  .tc-v.neg { color: var(--danger); }
+  .hist-wrap { overflow-x: auto; }
+  .htable { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .htable th { font-family: var(--mono); font-size: 0.67rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border); text-align: left; cursor: pointer; white-space: nowrap; }
+  .htable th:hover { color: var(--text2); }
+  .htable td { padding: 0.5rem 0.7rem; border-bottom: 1px solid rgba(255,255,255,0.03); font-family: var(--mono); color: var(--text2); white-space: nowrap; }
+  .htable tr:hover td { background: rgba(255,255,255,0.025); cursor: pointer; }
+  .htable td.ac { color: var(--accent); }
+  .htable td.pos { color: var(--accent); }
+  .htable td.neg { color: var(--danger); }
+  .empty-h { text-align: center; padding: 3rem 1rem; color: var(--text3); font-family: var(--mono); font-size: 0.84rem; }
+
+  /* CONFIG */
+  .cfg-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; max-width: 500px; }
+  .cfg-card .card-title { font-family: var(--mono); font-size: 0.68rem; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.9rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+  .field { margin-bottom: 0.8rem; }
+  .field label { font-family: var(--mono); font-size: 0.7rem; color: var(--text3); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .field input { width: 100%; font-family: var(--mono); font-size: 0.8rem; background: var(--surface2); border: 1px solid var(--border2); color: var(--text); border-radius: 4px; padding: 0.45rem 0.7rem; }
+  .field input:focus { outline: none; border-color: var(--accent); }
+  #cfg-status { font-family: var(--mono); font-size: 0.78rem; margin-top: 0.7rem; display: none; }
+  pre.sql { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 0.75rem; font-family: var(--mono); font-size: 0.69rem; color: var(--text2); overflow-x: auto; line-height: 1.65; white-space: pre-wrap; }
+
+  /* MODAL */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 10px; padding: 1.5rem; max-width: 580px; width: 100%; max-height: 85vh; overflow-y: auto; }
+  .modal h3 { font-family: var(--mono); font-size: 0.84rem; color: var(--accent); margin-bottom: 1rem; }
+  .msec { margin-bottom: 0.9rem; }
+  .msec h4 { font-family: var(--mono); font-size: 0.66rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; padding: 0.55rem 1rem; border-radius: 6px; font-family: var(--mono); font-size: 0.8rem; z-index: 999; opacity: 0; transition: opacity 0.25s; pointer-events: none; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:200;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:2rem;width:100%;max-width:340px">
+    <div style="font-family:var(--mono);font-size:0.9rem;color:var(--accent);font-weight:700;margin-bottom:0.4rem">RENDICIÓN DE CAJA</div>
+    <div style="font-family:var(--mono);font-size:0.72rem;color:var(--text3);margin-bottom:1.5rem">Panel de administración</div>
+    <div style="margin-bottom:0.9rem">
+      <label style="font-family:var(--mono);font-size:0.7rem;color:var(--text3);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Usuario</label>
+      <input id="l-user" type="text" placeholder="usuario" autocomplete="username"
+        style="width:100%;font-family:var(--mono);font-size:0.9rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.55rem 0.75rem;box-sizing:border-box">
+    </div>
+    <div style="margin-bottom:1.1rem">
+      <label style="font-family:var(--mono);font-size:0.7rem;color:var(--text3);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">Contraseña</label>
+      <input id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password"
+        style="width:100%;font-family:var(--mono);font-size:0.9rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.55rem 0.75rem;box-sizing:border-box">
+    </div>
+    <button onclick="doLogin()" style="width:100%;font-family:var(--mono);font-size:0.85rem;padding:0.65rem;border-radius:4px;border:none;background:var(--accent);color:#000;font-weight:700;cursor:pointer">Entrar</button>
+    <div id="l-err" style="display:none;margin-top:0.75rem;font-family:var(--mono);font-size:0.78rem;color:var(--danger)">Usuario o contraseña incorrectos.</div>
+  </div>
+</div>
+
+<header>
+  <h1>RENDICIÓN DE CAJA / SCANNER IA</h1>
+  <span>v3.0 · Supabase sync</span>
+  <span id="user-badge" style="margin-left:auto;font-size:0.72rem;color:var(--text3);cursor:pointer" onclick="doLogout()">— Salir</span>
+</header>
+
+<div class="container">
+  <div class="tab-nav">
+    <button class="active" onclick="showTab('scanner')">Escanear</button>
+    <button onclick="showTab('historial')">Historial</button>
+    <button onclick="showTab('analisis')">Análisis</button>
+    <button onclick="showTab('config')">Configuración</button>
+  </div>
+
+  <!-- ══ TAB SCANNER ══ -->
+  <div id="tab-scanner" class="tab-content active">
+
+    <div class="upload-area" id="drop-zone" onclick="document.getElementById('file-in').click()">
+      <div style="font-size:2rem;margin-bottom:0.6rem">📄</div>
+      <p><strong>Subí el PDF o foto de la rendición</strong></p>
+      <p>PDF · JPG · PNG — arrastrá o hacé clic</p>
+    </div>
+    <input type="file" id="file-in" accept="image/*,application/pdf,.pdf">
+
+    <div class="preview-bar" id="preview-bar">
+      <img id="thumb" alt="preview">
+      <div class="fi">
+        <strong id="fname">—</strong>
+        <span id="fsize">—</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="document.getElementById('file-in').click()">Cambiar</button>
+        <button class="btn primary" id="scan-btn" onclick="scan()">✦ Escanear</button>
+      </div>
+    </div>
+
+    <div class="status" id="status">
+      <p style="font-family:var(--mono);font-size:0.84rem;color:var(--text2)">
+        <span class="spinner"></span>Analizando con IA…
+      </p>
+    </div>
+
+    <div class="err-box" id="err-box"></div>
+
+    <div id="results" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
+        <span style="font-family:var(--mono);font-size:0.84rem;color:var(--accent);font-weight:700">DATOS EXTRAÍDOS</span>
+        <div class="btn-row">
+          <button class="btn" onclick="exportCSVUnico()">Exportar CSV</button>
+          <button class="btn" onclick="copyJSON()">Copiar JSON</button>
+        </div>
+      </div>
+
+      <div class="data-grid" id="results-grid"></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB HISTORIAL ══ -->
+  <div id="tab-historial" class="tab-content">
+    <div class="search-bar">
+      <input type="date" id="s-from" title="Desde">
+      <input type="date" id="s-to" title="Hasta">
+      <select id="s-cajera"><option value="">Todas las cajeras</option></select>
+      <button class="btn" onclick="aplicarFiltro()">Filtrar</button>
+      <button class="btn" onclick="limpiarFiltro()">Limpiar</button>
+      <button class="btn" style="margin-left:auto" onclick="exportCSVHistorial()">Exportar CSV</button>
+    </div>
+    <div class="totals-grid" id="totals-grid"></div>
+    <div class="hist-wrap">
+      <table class="htable" id="htable">
+        <thead><tr>
+          <th onclick="sortBy('fecha')">Fecha ↕</th>
+          <th onclick="sortBy('cajera')">Cajera ↕</th>
+          <th onclick="sortBy('efectivo')">Efectivo ↕</th>
+          <th onclick="sortBy('tarjetas')">Tarjetas ↕</th>
+          <th onclick="sortBy('transferencias')">Transfer ↕</th>
+          <th onclick="sortBy('total')">Total ↕</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="hist-body"></tbody>
+      </table>
+    </div>
+    <div class="empty-h" id="hist-empty" style="display:none">No hay registros aún.<br>Escaneá una rendición para empezar.</div>
+  </div>
+
+  <!-- ══ TAB CONFIG ══ -->
+  <div id="tab-config" class="tab-content">
+
+    <div class="cfg-card">
+      <div class="card-title">Conexión Supabase</div>
+      <p style="font-size:0.8rem;color:var(--text2);margin-bottom:1rem;line-height:1.6">
+        Guardá los datos online en tu proyecto Supabase.<br>
+        Sin configurar, todo queda solo en este browser.
+      </p>
+      <div class="field">
+        <label>URL del proyecto</label>
+        <input id="cfg-url" type="text" placeholder="https://xxxx.supabase.co">
+      </div>
+      <div class="field">
+        <label>Anon public key</label>
+        <input id="cfg-key" type="password" placeholder="eyJhbGci...">
+      </div>
+      <div class="btn-row" style="margin-top:0.9rem">
+        <button class="btn primary" onclick="guardarConfig()">Guardar</button>
+        <button class="btn" onclick="testConexion()">Probar conexión</button>
+        <button class="btn" style="color:var(--danger);margin-left:auto" onclick="borrarConfig()">Borrar</button>
+      </div>
+      <p id="cfg-status"></p>
+    </div>
+
+    <div class="cfg-card">
+      <div class="card-title">SQL — crear tabla (una sola vez)</div>
+      <p style="font-size:0.8rem;color:var(--text2);margin-bottom:0.75rem">Corré esto en el SQL Editor de Supabase:</p>
+      <pre class="sql" id="sql-pre">-- Corré esto si es la primera vez:
+create table if not exists rendiciones (
+  _id bigint primary key,
+  fecha text, cajera text,
+  efectivo_total numeric default 0,
+  visa_credito numeric default 0,
+  visa_debito numeric default 0,
+  amex numeric default 0,
+  mastercard numeric default 0,
+  maestro numeric default 0,
+  naranja numeric default 0,
+  transferencias numeric default 0,
+  or_patagway numeric default 0,
+  cuenta_dni numeric default 0,
+  total_general numeric default 0,
+  _guardado text
+);
+alter table rendiciones enable row level security;
+create policy "acceso anonimo" on rendiciones
+  for all using (true) with check (true);
+
+-- Si ya tenías la tabla vieja, corré esto en su lugar:
+-- drop table rendiciones;
+-- y volvé a crear con el CREATE de arriba.</pre>
+      <button class="btn" style="margin-top:0.6rem"
+        onclick="navigator.clipboard.writeText(document.getElementById('sql-pre').textContent).then(()=>toast('SQL copiado','ok'))">
+        Copiar SQL
+      </button>
+    </div>
+
+    <div class="cfg-card">
+      <div class="card-title">Datos locales</div>
+      <p id="local-count" style="font-size:0.8rem;color:var(--text2);margin-bottom:0.75rem">—</p>
+      <div class="btn-row">
+        <button class="btn" onclick="subirLocalesASupabase()">Subir locales a Supabase</button>
+        <button class="btn" style="color:var(--danger)" onclick="borrarTodoLocal()">Borrar datos locales</button>
+      </div>
+    </div>
+
+  </div>
+  <!-- ══ TAB ANÁLISIS ══ -->
+  <div id="tab-analisis" class="tab-content">
+
+    <div style="display:flex;gap:0.6rem;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center">
+      <input type="date" id="an-from" style="font-family:var(--mono);font-size:0.8rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.42rem 0.7rem">
+      <input type="date" id="an-to" style="font-family:var(--mono);font-size:0.8rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.42rem 0.7rem">
+      <select id="an-cajera" style="font-family:var(--mono);font-size:0.8rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.42rem 0.7rem">
+        <option value="">Todas las cajeras</option>
+      </select>
+      <button class="btn" onclick="renderAnalisis()">Aplicar</button>
+      <button class="btn" onclick="resetAnalisis()">Todo</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.6rem;margin-bottom:1.25rem" id="an-totals"></div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">Total general por fecha</div>
+      <canvas id="chart-total" height="90"></canvas>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">Medios de pago por fecha</div>
+      <canvas id="chart-medios" height="90"></canvas>
+    </div>
+
+  </div><!-- /tab-analisis -->
+
+</div>
+
+<!-- Modal EDICIÓN -->
+<div class="overlay" id="edit-overlay" onclick="if(event.target===this)closeEdit()">
+  <div class="modal" style="max-width:520px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <h3 style="font-family:var(--mono);font-size:0.84rem;color:var(--accent)">Editar registro</h3>
+      <button class="btn" onclick="closeEdit()">✕</button>
+    </div>
+    <div id="edit-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem" id="edit-grid"></div>
+      <div style="margin-top:1rem;display:flex;gap:0.6rem;justify-content:flex-end">
+        <button class="btn" style="color:var(--danger)" onclick="confirmarBorrar()">Borrar registro</button>
+        <button class="btn primary" onclick="guardarEdicion()">Guardar cambios</button>
+      </div>
+      <div id="edit-err" style="display:none;font-family:var(--mono);font-size:0.78rem;color:var(--danger);margin-top:0.6rem"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal detalle -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h3 id="modal-title">Detalle</h3>
+      <button class="btn" onclick="closeModal()">✕ Cerrar</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══ USUARIOS Y LOGIN ═════════════════════════════════════════════
+const USUARIOS = {
+  'sofia':  { pass: 'sofi1032',  nombre: 'SOFIA',  admin: false },
+  'malena': { pass: 'male1362',  nombre: 'MALENA', admin: false },
+  'agus':   { pass: 'agus1234',  nombre: 'AGUS',   admin: true  },
+};
+
+function doLogin() {
+  const user = document.getElementById('l-user').value.trim().toLowerCase();
+  const pass = document.getElementById('l-pass').value.trim();
+  const u = USUARIOS[user];
+  if (!u || u.pass !== pass) {
+    document.getElementById('l-err').style.display = 'block';
+    return;
+  }
+  sessionStorage.setItem('rdcaja_admin', JSON.stringify({ ...u, user }));
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('user-badge').textContent = u.nombre + ' · Salir';
+}
+
+function doLogout() {
+  sessionStorage.removeItem('rdcaja_admin');
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('user-badge').textContent = '— Salir';
+}
+
+// ══ SUPABASE CONFIG ═══════════════════════════════════════════════
+const LOC_KEY = 'rdcaja_data';
+const CFG_KEY = 'rdcaja_cfg';
+
+function getCfg() {
+  try { return JSON.parse(localStorage.getItem(CFG_KEY) || '{}'); }
+  catch(e) { return {}; }
+}
+function saveCfg(c) { localStorage.setItem(CFG_KEY, JSON.stringify(c)); }
+
+function supaBase() {
+  const { url } = getCfg();
+  return url ? url.replace(/\/+$/, '') : null;
+}
+function supaHdrs() {
+  const { key } = getCfg();
+  return { 'Content-Type': 'application/json', 'apikey': key, 'Authorization': 'Bearer ' + key, 'Prefer': 'return=minimal' };
+}
+
+async function supaGuardar(entry) {
+  const base = supaBase();
+  if (!base) return false;
+  try {
+    const r = await fetch(base + '/rest/v1/rendiciones', {
+      method: 'POST', headers: supaHdrs(), body: JSON.stringify(flatten(entry))
+    });
+    return r.ok;
+  } catch(e) { return false; }
+}
+
+async function supaCargar() {
+  const base = supaBase();
+  if (!base) return null;
+  try {
+    const r = await fetch(base + '/rest/v1/rendiciones?order=_id.desc&limit=500', { headers: supaHdrs() });
+    if (!r.ok) return null;
+    return (await r.json()).map(unflatten);
+  } catch(e) { return null; }
+}
+
+async function supaEliminar(id) {
+  const base = supaBase();
+  if (!base) return;
+  try { await fetch(base + '/rest/v1/rendiciones?_id=eq.' + id, { method: 'DELETE', headers: supaHdrs() }); }
+  catch(e) {}
+}
+
+// ══ LOCAL STORAGE ════════════════════════════════════════════════
+function getLocal() {
+  try { return JSON.parse(localStorage.getItem(LOC_KEY) || '[]'); } catch(e) { return []; }
+}
+function setLocal(d) { localStorage.setItem(LOC_KEY, JSON.stringify(d)); }
+
+// ══ FLATTEN / UNFLATTEN ══════════════════════════════════════════
+function flatten(d) {
+  return {
+    _id: d._id, _guardado: d._guardado||new Date().toISOString(),
+    fecha: d.fecha||null,
+    cajera: d.cajera||null,
+    efectivo_total: d.efectivo_total||0,
+    visa_credito: d.visa_credito||0,
+    visa_debito: d.visa_debito||0,
+    amex: d.amex||0,
+    mastercard: d.mastercard||0,
+    maestro: d.maestro||0,
+    naranja: d.naranja||0,
+    transferencias: d.transferencias||0,
+    or_patagway: d.or_patagway||0,
+    cuenta_dni: d.cuenta_dni||0,
+    total_general: d.total_general||0
+  };
+}
+function unflatten(r) { return r; }
+
+// ══ ADD HISTORY ══════════════════════════════════════════════════
+async function addHistory(d) {
+  const entry = { ...d, _id: Date.now(), _guardado: new Date().toISOString() };
+  const local = getLocal();
+  local.push(entry);
+  setLocal(local);
+  const ok = await supaGuardar(entry);
+  if (supaBase()) toast(ok ? 'Guardado en Supabase ✓' : 'Guardado local — error Supabase', ok ? 'ok' : 'warn');
+  else toast('Guardado localmente', 'ok');
+}
+
+// ══ TABS ═════════════════════════════════════════════════════════
+function showTab(t) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-nav button').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + t).classList.add('active');
+  document.querySelectorAll('.tab-nav button').forEach(el => {
+    const map = { scanner:'escan', historial:'hist', analisis:'anál', config:'config' };
+    if (el.textContent.toLowerCase().includes(map[t])) el.classList.add('active');
+  });
+  if (t === 'historial') renderHistorial();
+  if (t === 'config') refreshConfig();
+  if (t === 'analisis') renderAnalisis();
+}
+
+// ══ UPLOAD ═══════════════════════════════════════════════════════
+let imgB64 = null, imgType = null, lastData = null;
+
+const dz = document.getElementById('drop-zone');
+const fi = document.getElementById('file-in');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); const f=e.dataTransfer.files[0]; if(f) loadFile(f); });
+fi.addEventListener('change', e => { if(e.target.files[0]) loadFile(e.target.files[0]); });
+
+function loadFile(f) {
+  const isPDF = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+  imgType = isPDF ? 'application/pdf' : (f.type || 'image/jpeg');
+  const reader = new FileReader();
+  reader.onload = ev => {
+    imgB64 = ev.target.result.split(',')[1];
+    const thumb = document.getElementById('thumb');
+    if (isPDF) { thumb.src=''; thumb.style.cssText='height:60px;font-size:2.5rem;display:flex;align-items:center'; thumb.alt='📄'; }
+    else { thumb.src = ev.target.result; thumb.style = ''; }
+    document.getElementById('fname').textContent = f.name;
+    document.getElementById('fsize').textContent = (f.size/1024).toFixed(1) + ' KB';
+    document.getElementById('preview-bar').style.display = 'flex';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('err-box').style.display = 'none';
+  };
+  reader.readAsDataURL(f);
+}
+
+// ══ SCAN ═════════════════════════════════════════════════════════
+async function scan() {
+  if (!imgB64) return;
+  document.getElementById('scan-btn').disabled = true;
+  document.getElementById('status').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('err-box').style.display = 'none';
+
+  const prompt = `Sos un extractor de datos de un formulario de RENDICIÓN DE CAJA argentino. Respondé ÚNICAMENTE con JSON válido, sin markdown, sin texto adicional.
+
+INSTRUCCIONES MUY IMPORTANTES:
+
+1. FECHA: está en el encabezado arriba a la derecha, campo "FECHA". El formato es DD/MM/AAAA. En este formulario la fecha es 21/05/2026. Puede verse borrosa o con puntos entre los números — igualmente leela como fecha completa.
+
+1b. CAJERA: está en el encabezado, campo "CAJERA". Leé solo la primera palabra manuscrita. En este formulario es "MALENA". El número que aparece después (como 1362) NO es el nombre, ignoralo.
+
+2. EFECTIVOS PESOS: tabla en la parte derecha del formulario. Tiene columnas "Efectivo" (denominación), "Cant." y "Subtol.". El valor que necesitás es el TOTAL de esa tabla (suma de todos los subtotales). En este formulario ese total es 84000.
+
+3. TABLA DE TARJETAS: está en la parte inferior izquierda. Tiene 3 columnas: CUP, LOTE y TOTAL.
+   LA COLUMNA QUE NECESITÁS ES LA ÚLTIMA: "TOTAL".
+   NO leas CUP ni LOTE. Solo TOTAL.
+   Las filas son (de arriba hacia abajo):
+   - VISA CREDITO → su TOTAL es 236169
+   - VISA DEBITO → su TOTAL es 58820
+   - AMEX → su TOTAL es 0 (vacío)
+   - MASTERCARD → su TOTAL es 10000
+   - MAESTRO → su TOTAL es 0 (vacío)
+   - NARANJA → su TOTAL es 0 (vacío)
+
+4. DEBAJO DE LA TABLA DE TARJETAS hay filas con sus totales:
+   - TRANSFERENCIAS → 92880
+   - OR PAYWAY → 48960
+   - CUENTA DNI → 0 (vacío)
+
+5. TOTAL AL PIE: el TOTAL $ al pie del formulario (suma de todo) es 446829.
+
+Usá esos valores como referencia para entender la estructura. Ahora extraé los valores del documento que te muestro.
+
+Devolvé exactamente este JSON con los valores reales del documento:
+{
+  "fecha": "DD/MM/AAAA",
+  "cajera": "primera palabra escrita a mano en el campo CAJERA del encabezado. Ejemplos posibles: MALENA, SOFIA, LILIANA. En este formulario es MALENA",
+  "efectivo_total": 0,
+  "visa_credito": 0,
+  "visa_debito": 0,
+  "amex": 0,
+  "mastercard": 0,
+  "maestro": 0,
+  "naranja": 0,
+  "transferencias": 0,
+  "or_patagway": 0,
+  "cuenta_dni": 0,
+  "total_general": 0
+}
+
+REGLA CRÍTICA: para cada tarjeta, el valor es el número de la columna TOTAL (la última columna de la tabla). Si la fila está en blanco o vacía, el valor es 0. NUNCA pongas el mismo número en todas las tarjetas.`;
+
+  const ANT_KEY = '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';
+
+  const contentBlock = imgType === 'application/pdf'
+    ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: imgB64 } }
+    : { type: 'image', source: { type: 'base64', media_type: imgType, data: imgB64 } };
+
+  try {
+    const resp = await fetch('https://anthropic-proxy.agustinbustos.workers.dev/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1000,
+        system: prompt,
+        messages: [{ role: 'user', content: [ contentBlock, { type: 'text', text: 'Extraé todos los datos de esta rendición.' } ] }]
+      })
+    });
+    const rawText = await resp.text();
+    if (!resp.ok) throw new Error('API ' + resp.status + ': ' + rawText.slice(0,300));
+    const raw = JSON.parse(rawText);
+    const txt = (raw.content||[]).map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    if (!txt) throw new Error('Respuesta vacía');
+    const d = JSON.parse(txt);
+    lastData = d;
+    renderResults(d);
+    await addHistory(d);
+  } catch(e) {
+    document.getElementById('err-box').textContent = 'Error: ' + e.message;
+    document.getElementById('err-box').style.display = 'block';
+  } finally {
+    document.getElementById('status').style.display = 'none';
+    document.getElementById('scan-btn').disabled = false;
+  }
+}
+
+// ══ RENDER RESULTS ════════════════════════════════════════════════
+function money(v) { if (!v && v!==0) return '—'; return '$ ' + Number(v).toLocaleString('es-AR'); }
+
+function renderResults(d) {
+  const grid = document.getElementById('results-grid');
+
+  // Calcular suma de medios de pago
+  const sumaMedios = (d.efectivo_total||0) + (d.visa_credito||0) + (d.visa_debito||0) +
+    (d.amex||0) + (d.mastercard||0) + (d.maestro||0) + (d.naranja||0) +
+    (d.transferencias||0) + (d.or_patagway||0) + (d.cuenta_dni||0);
+  const totalDoc = d.total_general||0;
+  const diferencia = sumaMedios - totalDoc;
+  const cuadra = Math.abs(diferencia) < 10;
+
+  grid.innerHTML = `
+    <div class="card">
+      <div class="card-title">Identificación</div>
+      <div class="kv"><span class="kv-k">Fecha</span><span class="kv-v" style="font-size:1rem;font-weight:700">${d.fecha||'—'}</span></div>
+      <div class="kv"><span class="kv-k">Cajera</span><span class="kv-v" style="font-size:1rem;font-weight:700">${d.cajera||'—'}</span></div>
+    </div>
+
+    <div class="card highlight" id="card-total">
+      <div class="card-title">Total del formulario</div>
+      <div class="big-num">${money(totalDoc)}</div>
+      <div style="font-size:0.72rem;color:var(--text2);margin-top:0.3rem">indicado en el formulario</div>
+    </div>
+
+    <div class="card full">
+      <div class="card-title">Medios de pago</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 1rem">
+        ${[
+          ['Efectivo',       d.efectivo_total],
+          ['Visa Crédito',   d.visa_credito],
+          ['Visa Débito',    d.visa_debito],
+          ['Amex',           d.amex],
+          ['Mastercard',     d.mastercard],
+          ['Maestro',        d.maestro],
+          ['Naranja',        d.naranja],
+          ['Transferencias', d.transferencias],
+          ['OR Payway',      d.or_patagway],
+          ['Cuenta DNI',     d.cuenta_dni],
+        ].map(([k,v]) => `
+          <div class="kv">
+            <span class="kv-k">${k}</span>
+            <span class="kv-v ${v>0?'ac':''}">${money(v)}</span>
+          </div>`).join('')}
+        <div class="kv" style="border-top:1px solid var(--border2);margin-top:0.3rem;padding-top:0.4rem;grid-column:1/-1">
+          <span class="kv-k" style="font-weight:600;color:var(--text)">Suma calculada</span>
+          <span class="kv-v ac" style="font-size:1rem;font-weight:700">${money(sumaMedios)}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card full" style="border-color:${cuadra?'var(--accent)':'var(--danger)'}">
+      <div class="card-title" style="color:${cuadra?'var(--accent)':'var(--danger)'}">
+        ${cuadra ? '✓ Los valores cuadran' : '⚠ Diferencia detectada'}
+      </div>
+      <div style="font-family:var(--mono);font-size:0.9rem;color:${cuadra?'var(--accent)':'var(--danger)'}">
+        ${cuadra
+          ? `Suma de medios (${money(sumaMedios)}) = Total del formulario (${money(totalDoc)})`
+          : `Suma de medios: ${money(sumaMedios)} — Total formulario: ${money(totalDoc)} — Diferencia: ${money(Math.abs(diferencia))} ${diferencia>0?'(sobra)':'(falta)'}`
+        }
+      </div>
+    </div>
+  `;
+  document.getElementById('results').style.display = 'block';
+}
+
+// ══ HISTORIAL ════════════════════════════════════════════════════
+let sortCol = 'fecha', sortDir = 1, filtro = {};
+
+function fechaSort(f) {
+  if (!f) return '';
+  if (f.includes('/')) { const [d,m,y]=f.split('/'); return `${y}-${m}-${d}`; }
+  return f;
+}
+
+function aplicarFiltro() {
+  filtro = { desde: document.getElementById('s-from').value, hasta: document.getElementById('s-to').value, cajera: document.getElementById('s-cajera').value };
+  renderHistorial();
+}
+function limpiarFiltro() {
+  ['s-from','s-to'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('s-cajera').value = '';
+  filtro = {};
+  renderHistorial();
+}
+function sortBy(col) { if(sortCol===col) sortDir*=-1; else { sortCol=col; sortDir=1; } renderHistorial(); }
+
+async function renderHistorial() {
+  const cfg = getCfg();
+  let lista;
+  if (cfg.url && cfg.key) {
+    const remote = await supaCargar();
+    if (remote !== null) { lista = remote; setLocal(remote); }
+    else lista = getLocal();
+  } else {
+    lista = getLocal();
+  }
+
+  // poblar cajeras
+  const cajeras = [...new Set(lista.map(r=>r.cajera).filter(Boolean))].sort();
+  const sel = document.getElementById('s-cajera');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todas las cajeras</option>';
+  cajeras.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; if(c===cur)o.selected=true; sel.appendChild(o); });
+
+  // filtrar
+  if (filtro.desde) lista = lista.filter(r => fechaSort(r.fecha) >= filtro.desde);
+  if (filtro.hasta) lista = lista.filter(r => fechaSort(r.fecha) <= filtro.hasta);
+  if (filtro.cajera) lista = lista.filter(r => r.cajera === filtro.cajera);
+
+  // ordenar
+  lista.sort((a,b) => {
+    let va,vb;
+    if (sortCol==='fecha') { va=fechaSort(a.fecha); vb=fechaSort(b.fecha); }
+    else if (sortCol==='cajera') { va=a.cajera||''; vb=b.cajera||''; }
+    else if (sortCol==='efectivo') { va=a.efectivo_total||0; vb=b.efectivo_total||0; }
+    else if (sortCol==='tarjetas') { va=(a.visa_credito||0)+(a.visa_debito||0)+(a.amex||0)+(a.mastercard||0)+(a.maestro||0)+(a.naranja||0); vb=(b.visa_credito||0)+(b.visa_debito||0)+(b.amex||0)+(b.mastercard||0)+(b.maestro||0)+(b.naranja||0); }
+    else if (sortCol==='transferencias') { va=(a.transferencias||0)+(a.or_patagway||0)+(a.cuenta_dni||0); vb=(b.transferencias||0)+(b.or_patagway||0)+(b.cuenta_dni||0); }
+    else if (sortCol==='total') { va=a.total_general||0; vb=b.total_general||0; }
+    return va<vb?-sortDir:va>vb?sortDir:0;
+  });
+
+  // totales
+  const te   = lista.reduce((s,r)=>s+(r.efectivo_total||0),0);
+  const ttarj = lista.reduce((s,r)=>s+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0),0);
+  const ttr  = lista.reduce((s,r)=>s+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0),0);
+  const ttg  = lista.reduce((s,r)=>s+(r.total_general||0),0);
+  const ndif = lista.filter(r=>{ const sm=(r.efectivo_total||0)+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0)+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0); return Math.abs(sm-(r.total_general||0))>=10; }).length;
+  document.getElementById('totals-grid').innerHTML = `
+    <div class="tc"><div class="tc-l">Registros</div><div class="tc-v">${lista.length}</div></div>
+    <div class="tc"><div class="tc-l">Total acumulado</div><div class="tc-v">${money(ttg)}</div></div>
+    <div class="tc"><div class="tc-l">Efectivo</div><div class="tc-v">${money(te)}</div></div>
+    <div class="tc"><div class="tc-l">Tarjetas</div><div class="tc-v">${money(ttarj)}</div></div>
+    <div class="tc"><div class="tc-l">Transfer + QR</div><div class="tc-v">${money(ttr)}</div></div>
+    <div class="tc" style="border-color:${ndif>0?'var(--danger)':'var(--accent)'}"><div class="tc-l">Con diferencia</div><div class="tc-v ${ndif>0?'neg':''}">${ndif}</div></div>`;
+
+  const tbody = document.getElementById('hist-body');
+  const empty = document.getElementById('hist-empty');
+  tbody.innerHTML = '';
+  if (!lista.length) { empty.style.display='block'; document.getElementById('htable').style.display='none'; return; }
+  empty.style.display='none'; document.getElementById('htable').style.display='table';
+  lista.forEach(r => {
+    const diff = r.diferencia||0;
+    const dc = diff>0?'pos':diff<0?'neg':'';
+    const ds = diff>0?'+ '+money(diff):money(diff);
+    const tr2 = document.createElement('tr');
+    tr2.onclick = () => openModal(r);
+    const tarjetas = (r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0);
+    const sumaMedios = (r.efectivo_total||0)+tarjetas+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0);
+    const cuadra = Math.abs(sumaMedios-(r.total_general||0)) < 10;
+    const difVal = sumaMedios - (r.total_general||0);
+    tr2.innerHTML = `<td>${r.fecha||'—'}</td>
+      <td>${r.cajera||'—'}</td>
+      <td class="ac">${money(r.efectivo_total)}</td>
+      <td class="ac">${money(tarjetas)}</td>
+      <td class="ac">${money(r.transferencias)}</td>
+      <td class="ac">${money(r.total_general)}</td>
+      <td class="ac" style="color:${cuadra?'var(--accent)':'var(--danger)'}">
+        ${cuadra ? '✓' : money(sumaMedios) + '<br><span style="font-size:10px">' + (difVal>0?'+':'')+money(difVal)+'</span>'}
+      </td>
+      <td style="display:flex;gap:4px">
+        <button class="btn" style="font-size:11px;padding:2px 7px" onclick="event.stopPropagation();abrirEditar(${r._id})">✎</button>
+        <button class="btn" style="font-size:11px;padding:2px 7px;color:var(--danger)" onclick="event.stopPropagation();eliminar(${r._id})">✕</button>
+      </td>\`;
+    tbody.appendChild(tr2);
+  });
+}
+
+async function eliminar(id) {
+  if (!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) return;
+  const local = getLocal().filter(r=>r._id!==id);
+  setLocal(local);
+  await supaEliminar(id);
+  toast('Registro eliminado', 'warn');
+  renderHistorial();
+}
+
+// ══ EDICIÓN ══════════════════════════════════════════════════════
+let editandoId = null;
+
+const CAMPOS_EDIT = [
+  { id: 'fecha',          label: 'Fecha',          tipo: 'text' },
+  { id: 'cajera',         label: 'Cajera',          tipo: 'text' },
+  { id: 'efectivo_total', label: 'Efectivo total',  tipo: 'number' },
+  { id: 'visa_credito',   label: 'Visa Crédito',    tipo: 'number' },
+  { id: 'visa_debito',    label: 'Visa Débito',     tipo: 'number' },
+  { id: 'amex',           label: 'Amex',            tipo: 'number' },
+  { id: 'mastercard',     label: 'Mastercard',      tipo: 'number' },
+  { id: 'maestro',        label: 'Maestro',         tipo: 'number' },
+  { id: 'naranja',        label: 'Naranja',         tipo: 'number' },
+  { id: 'transferencias', label: 'Transferencias',  tipo: 'number' },
+  { id: 'or_patagway',    label: 'OR Payway',       tipo: 'number' },
+  { id: 'cuenta_dni',     label: 'Cuenta DNI',      tipo: 'number' },
+  { id: 'total_general',  label: 'Total formulario',tipo: 'number' },
+  { id: 'observaciones',  label: 'Observaciones',   tipo: 'text'   },
+];
+
+function abrirEditar(id) {
+  const sesion = sessionStorage.getItem('rdcaja_admin');
+  if (!sesion) return;
+  const u = JSON.parse(sesion);
+  if (!u.admin) { toast('Solo el admin puede editar', 'warn'); return; }
+
+  const lista = getLocal();
+  const r = lista.find(x => x._id === id);
+  if (!r) return;
+  editandoId = id;
+
+  const grid = document.getElementById('edit-grid');
+  grid.innerHTML = CAMPOS_EDIT.map(c => `
+    <div>
+      <label style="font-family:var(--mono);font-size:0.68rem;color:var(--text3);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.05em">${c.label}</label>
+      <input id="edit-${c.id}" type="${c.tipo}" value="${r[c.id]??''}"
+        style="width:100%;font-family:var(--mono);font-size:0.82rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.4rem 0.6rem;box-sizing:border-box">
+    </div>
+  `).join('');
+
+  document.getElementById('edit-err').style.display = 'none';
+  document.getElementById('edit-overlay').classList.add('open');
+}
+
+function closeEdit() {
+  document.getElementById('edit-overlay').classList.remove('open');
+  editandoId = null;
+}
+
+async function guardarEdicion() {
+  if (!editandoId) return;
+
+  const updates = {};
+  CAMPOS_EDIT.forEach(c => {
+    const el = document.getElementById('edit-' + c.id);
+    updates[c.id] = c.tipo === 'number' ? (parseFloat(el.value)||0) : (el.value.trim()||null);
+  });
+  updates._id = editandoId;
+
+  // Actualizar local
+  const lista = getLocal().map(r => r._id === editandoId ? { ...r, ...updates } : r);
+  setLocal(lista);
+
+  // Actualizar Supabase
+  const base = supaBase();
+  if (base) {
+    try {
+      const r = await fetch(`${base}/rest/v1/rendiciones?_id=eq.${editandoId}`, {
+        method: 'PATCH',
+        headers: { ...supaHdrs(), 'Prefer': 'return=minimal' },
+        body: JSON.stringify(updates)
+      });
+      if (!r.ok) throw new Error();
+      toast('Cambios guardados ✓', 'ok');
+    } catch(e) {
+      toast('Guardado local. Error en Supabase.', 'warn');
+    }
+  } else {
+    toast('Cambios guardados localmente ✓', 'ok');
+  }
+
+  closeEdit();
+  renderHistorial();
+}
+
+async function confirmarBorrar() {
+  if (!editandoId) return;
+  if (!confirm('¿Borrar este registro? No se puede deshacer.')) return;
+  closeEdit();
+  await eliminar(editandoId);
+}
+
+// ══ MODAL ════════════════════════════════════════════════════════
+function kv2(k,v) { return `<div class="kv"><span class="kv-k">${k}</span><span class="kv-v">${v}</span></div>`; }
+
+function openModal(r) {
+  document.getElementById('modal-title').textContent = `${r.fecha||'—'}`;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="msec"><h4>Fecha</h4>${kv2('Fecha',r.fecha||'—')}</div>
+    <div class="msec"><h4>Efectivo</h4>${kv2('Total efectivo',money(r.efectivo_total))}</div>
+    <div class="msec"><h4>Tarjetas</h4>
+      ${kv2('Visa Crédito',money(r.visa_credito))}
+      ${kv2('Visa Débito',money(r.visa_debito))}
+      ${kv2('Amex',money(r.amex))}
+      ${kv2('Mastercard',money(r.mastercard))}
+      ${kv2('Maestro',money(r.maestro))}
+      ${kv2('Naranja',money(r.naranja))}
+    </div>
+    <div class="msec"><h4>Otros cobros</h4>
+      ${kv2('Transferencias',money(r.transferencias))}
+      ${kv2('OR Payway',money(r.or_patagway))}
+      ${kv2('Cuenta DNI',money(r.cuenta_dni))}
+    </div>
+    <div class="msec"><h4>Total</h4>${kv2('Total general',money(r.total_general))}</div>
+  `;
+    document.getElementById('overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+
+// ══ CONFIG UI ════════════════════════════════════════════════════
+function refreshConfig() {
+  const cfg = getCfg();
+  document.getElementById('cfg-url').value = cfg.url || '';
+  document.getElementById('cfg-key').value = cfg.key || '';
+  document.getElementById('local-count').textContent = getLocal().length + ' registros guardados en este browser.';
+}
+
+function guardarConfig() {
+  const url = document.getElementById('cfg-url').value.trim().replace(/\/+$/, '');
+  const key = document.getElementById('cfg-key').value.trim();
+  if (!url || !key) { toast('Completá URL y Key','warn'); return; }
+  saveCfg({ url, key });
+  toast('Configuración guardada ✓','ok');
+}
+
+function borrarConfig() {
+  if (!confirm('¿Borrar la configuración de Supabase?')) return;
+  saveCfg({});
+  document.getElementById('cfg-url').value = '';
+  document.getElementById('cfg-key').value = '';
+  toast('Configuración borrada','warn');
+}
+
+async function testConexion() {
+  const st = document.getElementById('cfg-status');
+  st.style.display = 'block';
+  st.style.color = 'var(--text2)';
+  st.textContent = 'Probando…';
+  // Guardar lo que está en los campos primero
+  const url = document.getElementById('cfg-url').value.trim().replace(/\/+$/, '');
+  const key = document.getElementById('cfg-key').value.trim();
+  if (!url || !key) { st.textContent = 'Completá URL y Key primero.'; st.style.color='var(--warn)'; return; }
+  saveCfg({ url, key });
+  const remote = await supaCargar();
+  if (remote !== null) { st.style.color='var(--accent)'; st.textContent='✓ Conexión OK — ' + remote.length + ' registros en Supabase'; }
+  else { st.style.color='var(--danger)'; st.textContent='✗ Error — revisá la URL y la Key'; }
+}
+
+async function subirLocalesASupabase() {
+  const cfg = getCfg();
+  if (!cfg.url) { toast('Configurá Supabase primero','warn'); return; }
+  const local = getLocal();
+  if (!local.length) { toast('No hay datos locales','warn'); return; }
+  toast('Subiendo ' + local.length + ' registros…','ok');
+  let ok = 0;
+  for (const e of local) { if (await supaGuardar(e)) ok++; }
+  toast(ok + '/' + local.length + ' registros subidos ✓','ok');
+}
+
+function borrarTodoLocal() {
+  if (!confirm('¿Borrar TODOS los datos locales de este browser?')) return;
+  localStorage.removeItem(LOC_KEY);
+  toast('Datos locales borrados','warn');
+  refreshConfig();
+}
+
+// ══ EXPORT ═══════════════════════════════════════════════════════
+function exportCSVUnico() {
+  if (!lastData) return;
+  const d=lastData, v=d.ventas||{}, c=d.cobros||{}, t=d.tarjetas_detalle||{}, g=d.gastos||{};
+  const rows = [['Campo','Valor'],['Fecha',d.fecha||''],['Cajera',d.cajera||''],['Local',d.local||''],['Turno',d.turno||''],
+    ['PIT',v.pit||0],['Cierre Z',v.cierre_z||0],['Accesorios',v.venta_accesorios||0],['Celulares',v.venta_celulares||0],['Venta total',v.venta_total_turno||0],
+    ['Efectivo',c.total_efectivo||0],['Tarjetas',c.total_tarjetas||0],['Transferencias',c.transferencias||0],['OR/Patagway',c.or_patagway||0],['Cuenta DNI',c.cuenta_dni||0],
+    ['Visa Cred',t.visa_credito||0],['Mastercard',t.mastercard||0],['Maestro',t.maestro||0],['Naranja',t.naranja||0],['Visa Deb',t.visa_debito||0],['Amex',t.amex||0],
+    ['Total gastos',g.total_gastos||0],['Subo comision',g.total_subo_comision||0],['Total rendido',d.total_rendido||0],['Diferencia',d.diferencia||0],['Observaciones',d.observaciones||'']];
+  dlCSV('rendicion_'+(d.fecha||'sin_fecha').replace(/\//g,'-')+'.csv', rows);
+}
+
+function exportCSVHistorial() {
+  const lista = getLocal();
+  if (!lista.length) { toast('No hay registros','warn'); return; }
+  const header = ['Fecha','Cajera','Local','Turno','Venta total','Efectivo','Tarjetas','Transferencias','Total rendido','Diferencia'];
+  const rows = lista.map(r => {
+    const v=r.ventas||{}, c=r.cobros||{};
+    return [r.fecha||'',r.cajera||'',r.local||'',r.turno||'',v.venta_total_turno||0,c.total_efectivo||0,c.total_tarjetas||0,c.transferencias||0,r.total_rendido||0,r.diferencia||0];
+  });
+  dlCSV('rendiciones.csv', [header, ...rows]);
+}
+
+function dlCSV(name, rows) {
+  const csv = '\uFEFF' + rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=name; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function copyJSON() {
+  if (!lastData) return;
+  navigator.clipboard.writeText(JSON.stringify(lastData,null,2)).then(()=>toast('JSON copiado','ok'));
+}
+
+// ══ TOAST ════════════════════════════════════════════════════════
+function toast(msg, tipo) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = tipo==='ok'?'#00b87a':tipo==='warn'?'#f5a623':'#ff4d4d';
+  el.style.color = '#000';
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.style.opacity='0', 2800);
+}
+
+// ══ ANÁLISIS ═════════════════════════════════════════════════════
+let chartTotal = null, chartMedios = null;
+
+function fechaSort(f) {
+  if (!f) return '';
+  if (f.includes('/')) { const [d,m,y]=f.split('/'); return `${y}-${m}-${d}`; }
+  return f;
+}
+
+function resetAnalisis() {
+  document.getElementById('an-from').value = '';
+  document.getElementById('an-to').value = '';
+  document.getElementById('an-cajera').value = '';
+  renderAnalisis();
+}
+
+async function renderAnalisis() {
+  const cfg = getCfg();
+  let lista;
+  if (cfg.url && cfg.key) {
+    const remote = await supaCargar();
+    lista = remote !== null ? remote : getLocal();
+  } else {
+    lista = getLocal();
+  }
+
+  // Poblar cajeras
+  const cajeras = [...new Set(lista.map(r=>r.cajera).filter(Boolean))].sort();
+  const sel = document.getElementById('an-cajera');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todas las cajeras</option>';
+  cajeras.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; if(c===cur)o.selected=true; sel.appendChild(o); });
+
+  // Filtrar
+  const desde = document.getElementById('an-from').value;
+  const hasta = document.getElementById('an-to').value;
+  const cajera = document.getElementById('an-cajera').value;
+  if (desde) lista = lista.filter(r => fechaSort(r.fecha) >= desde);
+  if (hasta) lista = lista.filter(r => fechaSort(r.fecha) <= hasta);
+  if (cajera) lista = lista.filter(r => r.cajera === cajera);
+
+  // Ordenar por fecha
+  lista.sort((a,b) => fechaSort(a.fecha) < fechaSort(b.fecha) ? -1 : 1);
+
+  if (!lista.length) {
+    document.getElementById('an-totals').innerHTML = '<p style="font-family:var(--mono);font-size:0.84rem;color:var(--text3)">No hay datos para mostrar.</p>';
+    return;
+  }
+
+  // Totales resumen
+  const ttg  = lista.reduce((s,r)=>s+(r.total_general||0),0);
+  const te   = lista.reduce((s,r)=>s+(r.efectivo_total||0),0);
+  const ttarj = lista.reduce((s,r)=>s+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0),0);
+  const ttr  = lista.reduce((s,r)=>s+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0),0);
+  document.getElementById('an-totals').innerHTML = `
+    <div class="tc"><div class="tc-l">Días</div><div class="tc-v">${lista.length}</div></div>
+    <div class="tc"><div class="tc-l">Total acumulado</div><div class="tc-v">${money(ttg)}</div></div>
+    <div class="tc"><div class="tc-l">Promedio diario</div><div class="tc-v">${money(Math.round(ttg/lista.length))}</div></div>
+    <div class="tc"><div class="tc-l">Efectivo</div><div class="tc-v">${money(te)}</div></div>
+    <div class="tc"><div class="tc-l">Tarjetas</div><div class="tc-v">${money(ttarj)}</div></div>
+    <div class="tc"><div class="tc-l">Transfer+QR</div><div class="tc-v">${money(ttr)}</div></div>
+  `;
+
+  const labels = lista.map(r => r.fecha||'');
+  const C = window.Chart;
+
+  // Destruir charts anteriores
+  if (chartTotal) { chartTotal.destroy(); chartTotal = null; }
+  if (chartMedios) { chartMedios.destroy(); chartMedios = null; }
+
+  const gridColor = 'rgba(255,255,255,0.05)';
+  const tickColor = '#555';
+  const baseOpts = {
+    responsive: true,
+    plugins: { legend: { labels: { color: '#888', font: { family: 'Courier New', size: 11 } } } },
+    scales: {
+      x: { ticks: { color: tickColor, font: { family: 'Courier New', size: 10 }, maxRotation: 45 }, grid: { color: gridColor } },
+      y: { ticks: { color: tickColor, font: { family: 'Courier New', size: 10 }, callback: v => '$'+Number(v).toLocaleString('es-AR') }, grid: { color: gridColor } }
+    }
+  };
+
+  // Gráfico total general
+  chartTotal = new C(document.getElementById('chart-total'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Total general',
+        data: lista.map(r=>r.total_general||0),
+        borderColor: '#00e5a0',
+        backgroundColor: 'rgba(0,229,160,0.08)',
+        borderWidth: 2,
+        pointBackgroundColor: '#00e5a0',
+        pointRadius: 4,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: baseOpts
+  });
+
+  // Gráfico medios de pago apilado
+  chartMedios = new C(document.getElementById('chart-medios'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Efectivo',       data: lista.map(r=>r.efectivo_total||0),  backgroundColor: 'rgba(0,229,160,0.8)' },
+        { label: 'Tarjetas',       data: lista.map(r=>(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0)), backgroundColor: 'rgba(99,179,237,0.8)' },
+        { label: 'Transfer+QR',    data: lista.map(r=>(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0)), backgroundColor: 'rgba(245,166,35,0.8)' },
+      ]
+    },
+    options: { ...baseOpts, scales: { ...baseOpts.scales, x: { ...baseOpts.scales.x, stacked: true }, y: { ...baseOpts.scales.y, stacked: true } }, plugins: { ...baseOpts.plugins } }
+  });
+}
+
+// ══ INIT ═════════════════════════════════════════════════════════
+// Precargar config Supabase si no hay una guardada
+(function() {
+  const cfg = getCfg();
+  if (!cfg.url) {
+    saveCfg({ url: 'https://dihhccmimdzcfsjcobgs.supabase.co', key: 'sb_publishable_Sf68jNa72m3UJcsl014Vhg_sFp_BYqD' });
+  }
+  // Check login
+  const sesion = sessionStorage.getItem('rdcaja_admin');
+  if (!sesion) {
+    document.getElementById('login-overlay').style.display = 'flex';
+  } else {
+    const u = JSON.parse(sesion);
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('user-badge').textContent = u.nombre + ' · Salir';
+  }
+  // Enter en login
+  document.getElementById('l-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+})();
+</script>
+</body>
+</html>
