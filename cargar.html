@@ -81,7 +81,7 @@
   </header>
 
   <!-- LOGIN -->
-  <div id="login-section">
+  <div id="login-section" style="display:none">
     <div class="login-box">
       <h2>Ingresar</h2>
       <div class="field">
@@ -549,7 +549,11 @@ function toast(msg, tipo) {
 
 // ══ INIT ═════════════════════════════════════════════════════════
 (function() {
-  // Verificar si viene del index con sesión de admin
+  document.getElementById('l-pass').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  // Verificar si viene del index con sesión
   var adminSesion = sessionStorage.getItem('rdcaja_admin');
   if (adminSesion) {
     var u = JSON.parse(adminSesion);
@@ -560,7 +564,7 @@ function toast(msg, tipo) {
       return;
     }
   }
-  // Verificar sesión propia de cargar.html
+  // Verificar sesión propia
   var saved = sessionStorage.getItem('rdcaja_user');
   if (saved) {
     usuarioActual = JSON.parse(saved);
@@ -569,9 +573,6 @@ function toast(msg, tipo) {
   }
   // Sin sesión: mostrar login
   document.getElementById('login-section').style.display = 'block';
-  document.getElementById('l-pass').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') doLogin();
-  });
 })();
 </script>
 </body>
