@@ -116,6 +116,7 @@
   /* TOAST */
   #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; padding: 0.55rem 1rem; border-radius: 6px; font-family: var(--mono); font-size: 0.8rem; z-index: 999; opacity: 0; transition: opacity 0.25s; pointer-events: none; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -128,6 +129,7 @@
   <div class="tab-nav">
     <button class="active" onclick="showTab('scanner')">Escanear</button>
     <button onclick="showTab('historial')">Historial</button>
+    <button onclick="showTab('analisis')">Análisis</button>
     <button onclick="showTab('config')">Configuración</button>
   </div>
 
@@ -270,6 +272,33 @@ create policy "acceso anonimo" on rendiciones
     </div>
 
   </div>
+  <!-- ══ TAB ANÁLISIS ══ -->
+  <div id="tab-analisis" class="tab-content">
+
+    <div style="display:flex;gap:0.6rem;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center">
+      <input type="date" id="an-from" style="font-family:var(--mono);font-size:0.8rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.42rem 0.7rem">
+      <input type="date" id="an-to" style="font-family:var(--mono);font-size:0.8rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.42rem 0.7rem">
+      <select id="an-cajera" style="font-family:var(--mono);font-size:0.8rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.42rem 0.7rem">
+        <option value="">Todas las cajeras</option>
+      </select>
+      <button class="btn" onclick="renderAnalisis()">Aplicar</button>
+      <button class="btn" onclick="resetAnalisis()">Todo</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.6rem;margin-bottom:1.25rem" id="an-totals"></div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">Total general por fecha</div>
+      <canvas id="chart-total" height="90"></canvas>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">Medios de pago por fecha</div>
+      <canvas id="chart-medios" height="90"></canvas>
+    </div>
+
+  </div><!-- /tab-analisis -->
+
 </div>
 
 <!-- Modal detalle -->
@@ -376,11 +405,12 @@ function showTab(t) {
   document.querySelectorAll('.tab-nav button').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-' + t).classList.add('active');
   document.querySelectorAll('.tab-nav button').forEach(el => {
-    const map = { scanner:'escan', historial:'hist', config:'config' };
+    const map = { scanner:'escan', historial:'hist', analisis:'anál', config:'config' };
     if (el.textContent.toLowerCase().includes(map[t])) el.classList.add('active');
   });
   if (t === 'historial') renderHistorial();
   if (t === 'config') refreshConfig();
+  if (t === 'analisis') renderAnalisis();
 }
 
 // ══ UPLOAD ═══════════════════════════════════════════════════════
@@ -806,6 +836,122 @@ function toast(msg, tipo) {
   el.style.opacity = '1';
   clearTimeout(el._t);
   el._t = setTimeout(()=>el.style.opacity='0', 2800);
+}
+
+// ══ ANÁLISIS ═════════════════════════════════════════════════════
+let chartTotal = null, chartMedios = null;
+
+function fechaSort(f) {
+  if (!f) return '';
+  if (f.includes('/')) { const [d,m,y]=f.split('/'); return `${y}-${m}-${d}`; }
+  return f;
+}
+
+function resetAnalisis() {
+  document.getElementById('an-from').value = '';
+  document.getElementById('an-to').value = '';
+  document.getElementById('an-cajera').value = '';
+  renderAnalisis();
+}
+
+async function renderAnalisis() {
+  const cfg = getCfg();
+  let lista;
+  if (cfg.url && cfg.key) {
+    const remote = await supaCargar();
+    lista = remote !== null ? remote : getLocal();
+  } else {
+    lista = getLocal();
+  }
+
+  // Poblar cajeras
+  const cajeras = [...new Set(lista.map(r=>r.cajera).filter(Boolean))].sort();
+  const sel = document.getElementById('an-cajera');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todas las cajeras</option>';
+  cajeras.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; if(c===cur)o.selected=true; sel.appendChild(o); });
+
+  // Filtrar
+  const desde = document.getElementById('an-from').value;
+  const hasta = document.getElementById('an-to').value;
+  const cajera = document.getElementById('an-cajera').value;
+  if (desde) lista = lista.filter(r => fechaSort(r.fecha) >= desde);
+  if (hasta) lista = lista.filter(r => fechaSort(r.fecha) <= hasta);
+  if (cajera) lista = lista.filter(r => r.cajera === cajera);
+
+  // Ordenar por fecha
+  lista.sort((a,b) => fechaSort(a.fecha) < fechaSort(b.fecha) ? -1 : 1);
+
+  if (!lista.length) {
+    document.getElementById('an-totals').innerHTML = '<p style="font-family:var(--mono);font-size:0.84rem;color:var(--text3)">No hay datos para mostrar.</p>';
+    return;
+  }
+
+  // Totales resumen
+  const ttg  = lista.reduce((s,r)=>s+(r.total_general||0),0);
+  const te   = lista.reduce((s,r)=>s+(r.efectivo_total||0),0);
+  const ttarj = lista.reduce((s,r)=>s+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0),0);
+  const ttr  = lista.reduce((s,r)=>s+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0),0);
+  document.getElementById('an-totals').innerHTML = `
+    <div class="tc"><div class="tc-l">Días</div><div class="tc-v">${lista.length}</div></div>
+    <div class="tc"><div class="tc-l">Total acumulado</div><div class="tc-v">${money(ttg)}</div></div>
+    <div class="tc"><div class="tc-l">Promedio diario</div><div class="tc-v">${money(Math.round(ttg/lista.length))}</div></div>
+    <div class="tc"><div class="tc-l">Efectivo</div><div class="tc-v">${money(te)}</div></div>
+    <div class="tc"><div class="tc-l">Tarjetas</div><div class="tc-v">${money(ttarj)}</div></div>
+    <div class="tc"><div class="tc-l">Transfer+QR</div><div class="tc-v">${money(ttr)}</div></div>
+  `;
+
+  const labels = lista.map(r => r.fecha||'');
+  const C = window.Chart;
+
+  // Destruir charts anteriores
+  if (chartTotal) { chartTotal.destroy(); chartTotal = null; }
+  if (chartMedios) { chartMedios.destroy(); chartMedios = null; }
+
+  const gridColor = 'rgba(255,255,255,0.05)';
+  const tickColor = '#555';
+  const baseOpts = {
+    responsive: true,
+    plugins: { legend: { labels: { color: '#888', font: { family: 'Courier New', size: 11 } } } },
+    scales: {
+      x: { ticks: { color: tickColor, font: { family: 'Courier New', size: 10 }, maxRotation: 45 }, grid: { color: gridColor } },
+      y: { ticks: { color: tickColor, font: { family: 'Courier New', size: 10 }, callback: v => '$'+Number(v).toLocaleString('es-AR') }, grid: { color: gridColor } }
+    }
+  };
+
+  // Gráfico total general
+  chartTotal = new C(document.getElementById('chart-total'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Total general',
+        data: lista.map(r=>r.total_general||0),
+        borderColor: '#00e5a0',
+        backgroundColor: 'rgba(0,229,160,0.08)',
+        borderWidth: 2,
+        pointBackgroundColor: '#00e5a0',
+        pointRadius: 4,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: baseOpts
+  });
+
+  // Gráfico medios de pago apilado
+  chartMedios = new C(document.getElementById('chart-medios'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Efectivo',       data: lista.map(r=>r.efectivo_total||0),  backgroundColor: 'rgba(0,229,160,0.8)' },
+        { label: 'Tarjetas',       data: lista.map(r=>(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0)), backgroundColor: 'rgba(99,179,237,0.8)' },
+        { label: 'Transfer+QR',    data: lista.map(r=>(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0)), backgroundColor: 'rgba(245,166,35,0.8)' },
+      ]
+    },
+    options: { ...baseOpts, scales: { ...baseOpts.scales, x: { ...baseOpts.scales.x, stacked: true }, y: { ...baseOpts.scales.y, stacked: true } }, plugins: { ...baseOpts.plugins } }
+  });
 }
 
 // ══ INIT ═════════════════════════════════════════════════════════
