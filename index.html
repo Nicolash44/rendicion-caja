@@ -373,6 +373,7 @@ function flatten(d) {
   return {
     _id: d._id, _guardado: d._guardado||new Date().toISOString(),
     fecha: d.fecha||null,
+    cajera: d.cajera||null,
     efectivo_total: d.efectivo_total||0,
     visa_credito: d.visa_credito||0,
     visa_debito: d.visa_debito||0,
@@ -965,4 +966,3 @@ async function renderAnalisis() {
 </script>
 </body>
 </html>
-
