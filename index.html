@@ -217,6 +217,10 @@
           <div class="kv"><span class="kv-k">Subo y comisión</span><span class="kv-v" id="r-subo">—</span></div>
           <div class="kv"><span class="kv-k">Tarjetas turno</span><span class="kv-v" id="r-tt">—</span></div>
         </div>
+        <div class="card full" id="efec-detalle-card" style="display:none">
+          <div class="card-title">Detalle billetes</div>
+          <div id="r-efec-detalle" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.4rem"></div>
+        </div>
         <div class="card full" id="obs-card" style="display:none">
           <div class="card-title">Observaciones</div>
           <div class="obs-box" id="r-obs"></div>
@@ -477,11 +481,19 @@ async function scan() {
   document.getElementById('err-box').style.display = 'none';
 
   const prompt = `Sos un extractor de RENDICIÓN DE CAJA argentina. Respondé ÚNICAMENTE con JSON válido sin markdown ni texto adicional.
+
+INSTRUCCIONES ESPECÍFICAS:
+- EFECTIVOS PESOS: hay una tabla con columnas "Efectivo" (denominación del billete), "Cant." (cantidad) y "Subtotal". Multiplicá denominación × cantidad para cada fila y sumá todos los subtotales para obtener total_efectivo.
+- TARJETAS: hay una tabla con filas por marca (Visa Crédito, Mastercard, Maestro, Naranja, Amex, Visa Débito). Cada fila tiene columnas CUP, LOTE y TOTAL. Tomá el valor TOTAL de cada fila para cada marca.
+- El campo "total_efectivo" en cobros debe ser la suma de todos los billetes (denominación × cantidad).
+- El campo "total_tarjetas" debe ser la suma de todas las marcas de tarjeta.
+
 {
   "fecha":"DD/MM/AAAA","cajera":"nombre","local":"nombre","turno":"texto","saldo_inicio":0,
   "ventas":{"pit":0,"cierre_z":0,"nota_credito":0,"venta_accesorios":0,"venta_celulares":0,"venta_total_turno":0},
   "cobros":{"total_efectivo":0,"total_tarjetas":0,"transferencias":0,"or_patagway":0,"cuenta_dni":0},
   "tarjetas_detalle":{"visa_credito":0,"mastercard":0,"maestro":0,"naranja":0,"visa_debito":0,"amex":0},
+  "efectivo_detalle":[{"denominacion":0,"cantidad":0,"subtotal":0}],
   "gastos":{"total_gastos":0,"total_subo_comision":0,"total_tarjetas_turno":0},
   "total_rendido":0,"diferencia":0,"observaciones":"texto o null"
 }
@@ -572,6 +584,18 @@ function renderResults(d) {
     document.getElementById('obs-card').style.display = 'block';
   } else {
     document.getElementById('obs-card').style.display = 'none';
+  }
+  if (d.efectivo_detalle && d.efectivo_detalle.length > 0) {
+    const cont = document.getElementById('r-efec-detalle');
+    cont.innerHTML = d.efectivo_detalle
+      .filter(b => b.cantidad > 0)
+      .map(b => `<div class="kv" style="background:var(--surface2);border-radius:4px;padding:0.3rem 0.6rem">
+        <span class="kv-k">$ ${Number(b.denominacion).toLocaleString('es-AR')} × ${b.cantidad}</span>
+        <span class="kv-v ac">${money(b.subtotal || b.denominacion * b.cantidad)}</span>
+      </div>`).join('');
+    document.getElementById('efec-detalle-card').style.display = 'block';
+  } else {
+    document.getElementById('efec-detalle-card').style.display = 'none';
   }
   document.getElementById('results').style.display = 'block';
 }
