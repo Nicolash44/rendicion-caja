@@ -170,62 +170,7 @@
         </div>
       </div>
 
-      <div class="data-grid">
-        <div class="card">
-          <div class="card-title">Identificación</div>
-          <div class="kv"><span class="kv-k">Fecha</span><span class="kv-v" id="r-fecha">—</span></div>
-          <div class="kv"><span class="kv-k">Cajera</span><span class="kv-v" id="r-cajera">—</span></div>
-          <div class="kv"><span class="kv-k">Local</span><span class="kv-v" id="r-local">—</span></div>
-          <div class="kv"><span class="kv-k">Turno</span><span class="kv-v" id="r-turno">—</span></div>
-          <div class="kv"><span class="kv-k">Saldo inicio</span><span class="kv-v ac" id="r-saldo">—</span></div>
-        </div>
-        <div class="card highlight" id="card-cierre">
-          <div class="card-title">Cierre</div>
-          <div class="big-num" id="r-rendido">—</div>
-          <div style="font-size:0.72rem;color:var(--text2);margin-bottom:0.6rem">Total rendido</div>
-          <div class="kv"><span class="kv-k">Diferencia</span><span class="kv-v" id="r-diff">—</span></div>
-          <div class="kv"><span class="kv-k">Venta turno</span><span class="kv-v ac" id="r-venta">—</span></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Ventas</div>
-          <div class="kv"><span class="kv-k">PIT</span><span class="kv-v ac" id="r-pit">—</span></div>
-          <div class="kv"><span class="kv-k">Cierre Z</span><span class="kv-v ac" id="r-cz">—</span></div>
-          <div class="kv"><span class="kv-k">Nota crédito</span><span class="kv-v" id="r-nc">—</span></div>
-          <div class="kv"><span class="kv-k">Accesorios</span><span class="kv-v ac" id="r-acc">—</span></div>
-          <div class="kv"><span class="kv-k">Celulares</span><span class="kv-v ac" id="r-cel">—</span></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Cobros</div>
-          <div class="kv"><span class="kv-k">Efectivo</span><span class="kv-v ac" id="r-efec">—</span></div>
-          <div class="kv"><span class="kv-k">Transferencias</span><span class="kv-v ac" id="r-transf">—</span></div>
-          <div class="kv"><span class="kv-k">OR Payway</span><span class="kv-v ac" id="r-or">—</span></div>
-          <div class="kv"><span class="kv-k">Cuenta DNI</span><span class="kv-v ac" id="r-cdni">—</span></div>
-          <div class="kv"><span class="kv-k">Total tarjetas</span><span class="kv-v ac" id="r-tarj">—</span></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Tarjetas</div>
-          <div class="kv"><span class="kv-k">Visa Crédito</span><span class="kv-v ac" id="r-visa">—</span></div>
-          <div class="kv"><span class="kv-k">Visa Débito</span><span class="kv-v ac" id="r-vdeb">—</span></div>
-          <div class="kv"><span class="kv-k">Amex</span><span class="kv-v ac" id="r-amex">—</span></div>
-          <div class="kv"><span class="kv-k">Mastercard</span><span class="kv-v ac" id="r-mc">—</span></div>
-          <div class="kv"><span class="kv-k">Maestro</span><span class="kv-v ac" id="r-maestro">—</span></div>
-          <div class="kv"><span class="kv-k">Naranja</span><span class="kv-v ac" id="r-naranja">—</span></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Gastos / Subo</div>
-          <div class="kv"><span class="kv-k">Total gastos</span><span class="kv-v" id="r-gastos">—</span></div>
-          <div class="kv"><span class="kv-k">Subo y comisión</span><span class="kv-v" id="r-subo">—</span></div>
-          <div class="kv"><span class="kv-k">Tarjetas turno</span><span class="kv-v" id="r-tt">—</span></div>
-        </div>
-        <div class="card full" id="efec-detalle-card" style="display:none">
-          <div class="card-title">Detalle billetes</div>
-          <div id="r-efec-detalle" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.4rem"></div>
-        </div>
-        <div class="card full" id="obs-card" style="display:none">
-          <div class="card-title">Observaciones</div>
-          <div class="obs-box" id="r-obs"></div>
-        </div>
-      </div>
+      <div class="data-grid" id="results-grid"></div>
     </div>
   </div>
 
@@ -244,11 +189,11 @@
       <table class="htable" id="htable">
         <thead><tr>
           <th onclick="sortBy('fecha')">Fecha ↕</th>
-          <th onclick="sortBy('cajera')">Cajera ↕</th>
-          <th onclick="sortBy('turno')">Turno</th>
-          <th onclick="sortBy('venta')">Venta ↕</th>
-          <th onclick="sortBy('rendido')">Rendido ↕</th>
-          <th onclick="sortBy('diferencia')">Diferencia ↕</th>
+          <th onclick="sortBy('efectivo')">Efectivo ↕</th>
+          <th onclick="sortBy('visa_credito')">Visa Créd ↕</th>
+          <th onclick="sortBy('mastercard')">Mastercard ↕</th>
+          <th onclick="sortBy('transferencias')">Transfer ↕</th>
+          <th onclick="sortBy('total')">Total ↕</th>
           <th></th>
         </tr></thead>
         <tbody id="hist-body"></tbody>
@@ -396,29 +341,23 @@ function setLocal(d) { localStorage.setItem(LOC_KEY, JSON.stringify(d)); }
 
 // ══ FLATTEN / UNFLATTEN ══════════════════════════════════════════
 function flatten(d) {
-  const v=d.ventas||{}, c=d.cobros||{}, t=d.tarjetas_detalle||d.cobros||{}, g=d.gastos||{};
-  return { _id:d._id, fecha:d.fecha||null, cajera:d.cajera||null, local:d.local||null, turno:d.turno||null,
-    pit:v.pit||0, cierre_z:v.cierre_z||0, nota_credito:v.nota_credito||0,
-    venta_accesorios:v.venta_accesorios||0, venta_celulares:v.venta_celulares||0, venta_total:v.venta_total_turno||0,
-    efectivo:c.total_efectivo||0, tarjetas:c.total_tarjetas||0, transferencias:c.transferencias||0,
-    or_patagway:c.or_patagway||0, cuenta_dni:c.cuenta_dni||0,
-    visa_credito:t.visa_credito||0, mastercard:t.mastercard||0, maestro:t.maestro||0,
-    naranja:t.naranja||0, visa_debito:t.visa_debito||0, amex:t.amex||0,
-    total_gastos:g.total_gastos||0, subo_comision:g.total_subo_comision||0,
-    total_rendido:d.total_rendido||0, diferencia:d.diferencia||0,
-    observaciones:d.observaciones||null, _guardado:d._guardado||new Date().toISOString() };
+  return {
+    _id: d._id, _guardado: d._guardado||new Date().toISOString(),
+    fecha: d.fecha||null,
+    efectivo_total: d.efectivo_total||0,
+    visa_credito: d.visa_credito||0,
+    visa_debito: d.visa_debito||0,
+    amex: d.amex||0,
+    mastercard: d.mastercard||0,
+    maestro: d.maestro||0,
+    naranja: d.naranja||0,
+    transferencias: d.transferencias||0,
+    or_patagway: d.or_patagway||0,
+    cuenta_dni: d.cuenta_dni||0,
+    total_general: d.total_general||0
+  };
 }
-function unflatten(r) {
-  return { _id:r._id, _guardado:r._guardado, fecha:r.fecha, cajera:r.cajera, local:r.local, turno:r.turno,
-    ventas:{ pit:r.pit, cierre_z:r.cierre_z, nota_credito:r.nota_credito,
-      venta_accesorios:r.venta_accesorios, venta_celulares:r.venta_celulares, venta_total_turno:r.venta_total },
-    cobros:{ total_efectivo:r.efectivo, total_tarjetas:r.tarjetas, transferencias:r.transferencias,
-      or_patagway:r.or_patagway, cuenta_dni:r.cuenta_dni },
-    tarjetas_detalle:{ visa_credito:r.visa_credito, mastercard:r.mastercard, maestro:r.maestro,
-      naranja:r.naranja, visa_debito:r.visa_debito, amex:r.amex },
-    gastos:{ total_gastos:r.total_gastos, total_subo_comision:r.subo_comision },
-    total_rendido:r.total_rendido, diferencia:r.diferencia, observaciones:r.observaciones };
-}
+function unflatten(r) { return r; }
 
 // ══ ADD HISTORY ══════════════════════════════════════════════════
 async function addHistory(d) {
@@ -480,70 +419,47 @@ async function scan() {
   document.getElementById('results').style.display = 'none';
   document.getElementById('err-box').style.display = 'none';
 
-  const prompt = `Sos un extractor de RENDICIÓN DE CAJA de una tienda de telefonía argentina. Respondé ÚNICAMENTE con JSON válido sin markdown ni texto adicional.
+  const prompt = `Sos un extractor de datos de un formulario de RENDICIÓN DE CAJA argentino. Respondé ÚNICAMENTE con JSON válido, sin markdown, sin texto adicional.
 
-ESTRUCTURA DEL FORMULARIO:
-1. ENCABEZADO: fecha, cajera, local, turno, saldo inicio
-2. VENTAS (columna Importe): PIT, CIERRE Z (FC), NOTA DE CREDITO (NC), Venta CELULARES, Venta ACCESORIOS, VENTA TOTAL TURNO
-3. EFECTIVOS PESOS: tabla con columnas Efectivo (denominación: 20000, 10000, 2000, 1000, 500, 200, 100, 50, 20) × Cant. = Subtotal. Sumá todos los subtotales para total_efectivo.
-4. TARJETAS: tabla con filas VISA CREDITO, VISA DEBITO, AMEX, MASTERCARD, MAESTRO, NARANJA. Cada fila tiene CUP, LOTE y TOTAL. Tomá el valor de la columna TOTAL para cada una. Si la fila está vacía vale 0.
-5. DEBAJO DE TARJETAS (columna TOTAL): TRANSFERENCIAS, OR PAYWAY, CUENTA DNI. Si están vacíos valen 0.
-6. CIERRE: TOTAL GASTOS, TOTAL Sdos y Com., TOTAL TARJETAS Turno, TOTAL RENDIDO, DIFERENCIA
-7. OBSERVACIONES: texto manuscrito al costado izquierdo
+El formulario tiene estas secciones. Leelas con atención:
 
-REGLAS:
-- Todos los campos de tarjetas DEBEN existir aunque valgan 0
-- TRANSFERENCIAS, OR PAYWAY y CUENTA DNI DEBEN existir aunque valgan 0
-- Para efectivo: multiplicá denominación × cantidad de cada fila, sumá todo = total_efectivo
-- Si un valor no se lee claramente, poné 0
+FECHA: está en el encabezado arriba a la derecha.
 
+EFECTIVOS PESOS: tabla en la parte inferior derecha con columnas "Efectivo" (denominación del billete), "Cant." y "Subtol.". El TOTAL de esta tabla es el total de efectivo.
+
+TARJETAS: tabla en la parte inferior izquierda. Las filas son exactamente estas, en este orden de arriba a abajo:
+- VISA CREDITO
+- VISA DEBITO  
+- AMEX
+- MASTERCARD
+- MAESTRO
+- NARANJA
+Cada fila tiene columnas CUP, LOTE y TOTAL. Leé el valor de la columna TOTAL para cada fila. Si la fila está vacía o en blanco, el valor es 0.
+
+DEBAJO DE LA TABLA DE TARJETAS hay tres filas más con sus totales:
+- TRANSFERENCIAS
+- OR PAYWAY (puede aparecer como "QR PAYWAY" o "OR PAYWAY")
+- CUENTA DNI
+
+Al pie del formulario hay un TOTAL GENERAL que suma todo.
+
+Devolvé exactamente este JSON:
 {
-  "fecha":"DD/MM/AAAA",
-  "cajera":"nombre",
-  "local":"nombre del local",
-  "turno":"ÚNICO/MAÑANA/TARDE/NOCHE",
-  "saldo_inicio":0,
-  "ventas":{
-    "pit":0,
-    "cierre_z":0,
-    "nota_credito":0,
-    "venta_accesorios":0,
-    "venta_celulares":0,
-    "venta_total_turno":0
-  },
-  "efectivo_detalle":[
-    {"denominacion":20000,"cantidad":0,"subtotal":0},
-    {"denominacion":10000,"cantidad":0,"subtotal":0},
-    {"denominacion":2000,"cantidad":0,"subtotal":0},
-    {"denominacion":1000,"cantidad":0,"subtotal":0},
-    {"denominacion":500,"cantidad":0,"subtotal":0},
-    {"denominacion":200,"cantidad":0,"subtotal":0},
-    {"denominacion":100,"cantidad":0,"subtotal":0},
-    {"denominacion":50,"cantidad":0,"subtotal":0},
-    {"denominacion":20,"cantidad":0,"subtotal":0}
-  ],
-  "cobros":{
-    "total_efectivo":0,
-    "visa_credito":0,
-    "visa_debito":0,
-    "amex":0,
-    "mastercard":0,
-    "maestro":0,
-    "naranja":0,
-    "total_tarjetas":0,
-    "transferencias":0,
-    "or_patagway":0,
-    "cuenta_dni":0
-  },
-  "gastos":{
-    "total_gastos":0,
-    "total_subo_comision":0,
-    "total_tarjetas_turno":0
-  },
-  "total_rendido":0,
-  "diferencia":0,
-  "observaciones":null
-}`;
+  "fecha": "DD/MM/AAAA",
+  "efectivo_total": 0,
+  "visa_credito": 0,
+  "visa_debito": 0,
+  "amex": 0,
+  "mastercard": 0,
+  "maestro": 0,
+  "naranja": 0,
+  "transferencias": 0,
+  "or_patagway": 0,
+  "cuenta_dni": 0,
+  "total_general": 0
+}
+
+IMPORTANTE: todos los campos numéricos deben existir siempre. Si no tienen valor visible en el formulario, poné 0. No inventes valores.``;
 
   const ANT_KEY = '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';
 
@@ -586,65 +502,36 @@ REGLAS:
 function money(v) { if (!v && v!==0) return '—'; return '$ ' + Number(v).toLocaleString('es-AR'); }
 
 function renderResults(d) {
-  const set = (id, val, cls) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = val;
-    if (cls) el.className = 'kv-v ' + cls;
-  };
-  const v=d.ventas||{}, c=d.cobros||{}, t=d.tarjetas_detalle||d.cobros||{}, g=d.gastos||{};
-  set('r-fecha', d.fecha||'—');
-  set('r-cajera', d.cajera||'—');
-  set('r-local', d.local||'—');
-  set('r-turno', d.turno||'—');
-  set('r-saldo', money(d.saldo_inicio), 'ac');
-  set('r-pit', money(v.pit), 'ac');
-  set('r-cz', money(v.cierre_z), 'ac');
-  set('r-nc', money(v.nota_credito));
-  set('r-acc', money(v.venta_accesorios), 'ac');
-  set('r-cel', money(v.venta_celulares), 'ac');
-  set('r-venta', money(v.venta_total_turno), 'ac');
-  // tarjetas pueden estar en cobros o en tarjetas_detalle
-  const tc = d.tarjetas_detalle || {};
-  set('r-efec', money(c.total_efectivo), 'ac');
-  set('r-transf', money(c.transferencias), 'ac');
-  set('r-or', money(c.or_patagway), 'ac');
-  set('r-cdni', money(c.cuenta_dni), 'ac');
-  set('r-tarj', money(c.total_tarjetas), 'ac');
-  set('r-visa', money(c.visa_credito || tc.visa_credito), 'ac');
-  set('r-vdeb', money(c.visa_debito || tc.visa_debito), 'ac');
-  set('r-amex', money(c.amex || tc.amex), 'ac');
-  set('r-mc', money(c.mastercard || tc.mastercard), 'ac');
-  set('r-maestro', money(c.maestro || tc.maestro), 'ac');
-  set('r-naranja', money(c.naranja || tc.naranja), 'ac');
-  set('r-gastos', money(g.total_gastos));
-  set('r-subo', money(g.total_subo_comision));
-  set('r-tt', money(g.total_tarjetas_turno));
-  document.getElementById('r-rendido').textContent = money(d.total_rendido);
-  const diff = d.diferencia||0;
-  const diffEl = document.getElementById('r-diff');
-  const card = document.getElementById('card-cierre');
-  if (diff < 0) { diffEl.textContent = money(diff); diffEl.style.color = 'var(--danger)'; card.className = 'card danger'; }
-  else if (diff > 0) { diffEl.textContent = '+ ' + money(diff); diffEl.style.color = 'var(--accent)'; card.className = 'card highlight'; }
-  else { diffEl.textContent = '$ 0 ✓'; diffEl.style.color = 'var(--text2)'; card.className = 'card highlight'; }
-  if (d.observaciones) {
-    document.getElementById('r-obs').textContent = d.observaciones;
-    document.getElementById('obs-card').style.display = 'block';
-  } else {
-    document.getElementById('obs-card').style.display = 'none';
-  }
-  if (d.efectivo_detalle && d.efectivo_detalle.length > 0) {
-    const cont = document.getElementById('r-efec-detalle');
-    cont.innerHTML = d.efectivo_detalle
-      .filter(b => b.cantidad > 0)
-      .map(b => `<div class="kv" style="background:var(--surface2);border-radius:4px;padding:0.3rem 0.6rem">
-        <span class="kv-k">$ ${Number(b.denominacion).toLocaleString('es-AR')} × ${b.cantidad}</span>
-        <span class="kv-v ac">${money(b.subtotal || b.denominacion * b.cantidad)}</span>
-      </div>`).join('');
-    document.getElementById('efec-detalle-card').style.display = 'block';
-  } else {
-    document.getElementById('efec-detalle-card').style.display = 'none';
-  }
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = `
+    <div class="card highlight" style="grid-column:1/-1">
+      <div class="card-title">Resumen</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.5rem">
+        <div><div style="font-size:0.7rem;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-bottom:3px">Fecha</div><div style="font-family:var(--mono);font-size:1rem;font-weight:700;color:var(--text)">${d.fecha||'—'}</div></div>
+        <div><div style="font-size:0.7rem;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-bottom:3px">Efectivo</div><div style="font-family:var(--mono);font-size:1rem;font-weight:700;color:var(--accent)">${money(d.efectivo_total)}</div></div>
+        <div><div style="font-size:0.7rem;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-bottom:3px">Total general</div><div style="font-family:var(--mono);font-size:1rem;font-weight:700;color:var(--accent)">${money(d.total_general)}</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Tarjetas</div>
+      ${[
+        ['Visa Crédito', d.visa_credito],
+        ['Visa Débito',  d.visa_debito],
+        ['Amex',         d.amex],
+        ['Mastercard',   d.mastercard],
+        ['Maestro',      d.maestro],
+        ['Naranja',      d.naranja],
+      ].map(([k,v]) => `<div class="kv"><span class="kv-k">${k}</span><span class="kv-v ${v>0?'ac':''}">${money(v)}</span></div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">Otros cobros</div>
+      ${[
+        ['Transferencias', d.transferencias],
+        ['OR Payway',      d.or_patagway],
+        ['Cuenta DNI',     d.cuenta_dni],
+      ].map(([k,v]) => `<div class="kv"><span class="kv-k">${k}</span><span class="kv-v ${v>0?'ac':''}">${money(v)}</span></div>`).join('')}
+    </div>
+  `;
   document.getElementById('results').style.display = 'block';
 }
 
@@ -696,28 +583,28 @@ async function renderHistorial() {
   lista.sort((a,b) => {
     let va,vb;
     if (sortCol==='fecha') { va=fechaSort(a.fecha); vb=fechaSort(b.fecha); }
-    else if (sortCol==='cajera') { va=a.cajera||''; vb=b.cajera||''; }
-    else if (sortCol==='turno') { va=a.turno||''; vb=b.turno||''; }
-    else if (sortCol==='venta') { va=(a.ventas||{}).venta_total_turno||0; vb=(b.ventas||{}).venta_total_turno||0; }
-    else if (sortCol==='rendido') { va=a.total_rendido||0; vb=b.total_rendido||0; }
-    else if (sortCol==='diferencia') { va=a.diferencia||0; vb=b.diferencia||0; }
+    else if (sortCol==='efectivo') { va=a.efectivo_total||0; vb=b.efectivo_total||0; }
+    else if (sortCol==='visa_credito') { va=a.visa_credito||0; vb=b.visa_credito||0; }
+    else if (sortCol==='mastercard') { va=a.mastercard||0; vb=b.mastercard||0; }
+    else if (sortCol==='transferencias') { va=a.transferencias||0; vb=b.transferencias||0; }
+    else if (sortCol==='total') { va=a.total_general||0; vb=b.total_general||0; }
     return va<vb?-sortDir:va>vb?sortDir:0;
   });
 
   // totales
-  const tv = lista.reduce((s,r)=>s+((r.ventas||{}).venta_total_turno||0),0);
-  const tr = lista.reduce((s,r)=>s+(r.total_rendido||0),0);
-  const td = lista.reduce((s,r)=>s+(r.diferencia||0),0);
-  const te = lista.reduce((s,r)=>s+((r.cobros||{}).total_efectivo||0),0);
-  const tt = lista.reduce((s,r)=>s+((r.cobros||{}).total_tarjetas||0),0);
-  const ttr = lista.reduce((s,r)=>s+((r.cobros||{}).transferencias||0),0);
+  const te = lista.reduce((s,r)=>s+(r.efectivo_total||0),0);
+  const tvc = lista.reduce((s,r)=>s+(r.visa_credito||0),0);
+  const tvd = lista.reduce((s,r)=>s+(r.visa_debito||0),0);
+  const tmc = lista.reduce((s,r)=>s+(r.mastercard||0),0);
+  const ttr = lista.reduce((s,r)=>s+(r.transferencias||0),0);
+  const ttg = lista.reduce((s,r)=>s+(r.total_general||0),0);
   document.getElementById('totals-grid').innerHTML = `
     <div class="tc"><div class="tc-l">Registros</div><div class="tc-v">${lista.length}</div></div>
-    <div class="tc"><div class="tc-l">Venta total</div><div class="tc-v">${money(tv)}</div></div>
-    <div class="tc"><div class="tc-l">Total rendido</div><div class="tc-v">${money(tr)}</div></div>
-    <div class="tc"><div class="tc-l">Diferencia acum.</div><div class="tc-v ${td<0?'neg':''}">${td>=0?'+ ':''}${money(td)}</div></div>
+    <div class="tc"><div class="tc-l">Total general</div><div class="tc-v">${money(ttg)}</div></div>
     <div class="tc"><div class="tc-l">Efectivo</div><div class="tc-v">${money(te)}</div></div>
-    <div class="tc"><div class="tc-l">Tarjetas</div><div class="tc-v">${money(tt)}</div></div>
+    <div class="tc"><div class="tc-l">Visa Crédito</div><div class="tc-v">${money(tvc)}</div></div>
+    <div class="tc"><div class="tc-l">Visa Débito</div><div class="tc-v">${money(tvd)}</div></div>
+    <div class="tc"><div class="tc-l">Mastercard</div><div class="tc-v">${money(tmc)}</div></div>
     <div class="tc"><div class="tc-l">Transferencias</div><div class="tc-v">${money(ttr)}</div></div>`;
 
   const tbody = document.getElementById('hist-body');
@@ -731,10 +618,12 @@ async function renderHistorial() {
     const ds = diff>0?'+ '+money(diff):money(diff);
     const tr2 = document.createElement('tr');
     tr2.onclick = () => openModal(r);
-    tr2.innerHTML = `<td>${r.fecha||'—'}</td><td>${r.cajera||'—'}</td><td>${r.turno||'—'}</td>
-      <td class="ac">${money((r.ventas||{}).venta_total_turno)}</td>
-      <td class="ac">${money(r.total_rendido)}</td>
-      <td class="${dc}">${ds}</td>
+    tr2.innerHTML = `<td>${r.fecha||'—'}</td>
+      <td class="ac">${money(r.efectivo_total)}</td>
+      <td class="ac">${money(r.visa_credito)}</td>
+      <td class="ac">${money(r.mastercard)}</td>
+      <td class="ac">${money(r.transferencias)}</td>
+      <td class="ac">${money(r.total_general)}</td>
       <td><button class="btn" style="font-size:11px;padding:2px 7px" onclick="event.stopPropagation();eliminar(${r._id})">✕</button></td>`;
     tbody.appendChild(tr2);
   });
@@ -752,17 +641,26 @@ async function eliminar(id) {
 function kv2(k,v) { return `<div class="kv"><span class="kv-k">${k}</span><span class="kv-v">${v}</span></div>`; }
 
 function openModal(r) {
-  const v=r.ventas||{}, c=r.cobros||{}, t=r.tarjetas_detalle||{}, g=r.gastos||{};
-  const diff=r.diferencia||0;
-  document.getElementById('modal-title').textContent = `${r.fecha||'—'} · ${r.cajera||'—'} · ${r.turno||'—'}`;
+  document.getElementById('modal-title').textContent = `${r.fecha||'—'}`;
   document.getElementById('modal-body').innerHTML = `
-    <div class="msec"><h4>Identificación</h4>${kv2('Local',r.local||'—')}${kv2('Saldo inicio',money(r.saldo_inicio))}</div>
-    <div class="msec"><h4>Cierre</h4>${kv2('Total rendido',money(r.total_rendido))}${kv2('Diferencia','<span style="color:'+(diff<0?'var(--danger)':'var(--accent)')+'">'+( diff>=0?'+ ':'')+money(diff)+'</span>')}</div>
-    <div class="msec"><h4>Ventas</h4>${kv2('PIT',money(v.pit))}${kv2('Cierre Z',money(v.cierre_z))}${kv2('Accesorios',money(v.venta_accesorios))}${kv2('Celulares',money(v.venta_celulares))}${kv2('Total turno',money(v.venta_total_turno))}</div>
-    <div class="msec"><h4>Cobros</h4>${kv2('Efectivo',money(c.total_efectivo))}${kv2('Tarjetas',money(c.total_tarjetas))}${kv2('Transferencias',money(c.transferencias))}${kv2('OR/Patagway',money(c.or_patagway))}${kv2('Cuenta DNI',money(c.cuenta_dni))}</div>
-    <div class="msec"><h4>Tarjetas detalle</h4>${kv2('Visa Crédito',money(t.visa_credito))}${kv2('Mastercard',money(t.mastercard))}${kv2('Maestro',money(t.maestro))}${kv2('Naranja',money(t.naranja))}${kv2('Visa Débito',money(t.visa_debito))}${kv2('Amex',money(t.amex))}</div>
-    ${r.observaciones?`<div class="msec"><h4>Observaciones</h4><div class="obs-box">${r.observaciones}</div></div>`:''}`;
-  document.getElementById('overlay').classList.add('open');
+    <div class="msec"><h4>Fecha</h4>${kv2('Fecha',r.fecha||'—')}</div>
+    <div class="msec"><h4>Efectivo</h4>${kv2('Total efectivo',money(r.efectivo_total))}</div>
+    <div class="msec"><h4>Tarjetas</h4>
+      ${kv2('Visa Crédito',money(r.visa_credito))}
+      ${kv2('Visa Débito',money(r.visa_debito))}
+      ${kv2('Amex',money(r.amex))}
+      ${kv2('Mastercard',money(r.mastercard))}
+      ${kv2('Maestro',money(r.maestro))}
+      ${kv2('Naranja',money(r.naranja))}
+    </div>
+    <div class="msec"><h4>Otros cobros</h4>
+      ${kv2('Transferencias',money(r.transferencias))}
+      ${kv2('OR Payway',money(r.or_patagway))}
+      ${kv2('Cuenta DNI',money(r.cuenta_dni))}
+    </div>
+    <div class="msec"><h4>Total</h4>${kv2('Total general',money(r.total_general))}</div>
+  `;
+    document.getElementById('overlay').classList.add('open');
 }
 function closeModal() { document.getElementById('overlay').classList.remove('open'); }
 
