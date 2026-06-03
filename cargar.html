@@ -136,9 +136,9 @@
         <button onclick="agregarGasto()" style="font-family:var(--mono);font-size:0.72rem;padding:2px 10px;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer">+ Agregar</button>
       </div>
       <div id="lista-gastos"></div>
-      <div class="total-row">
+      <div class="total+row">
         <span>Total gastos</span>
-        <span style="font-family:var(--mono);font-size:0.95rem;color:var(--danger)" id="total-gastos">$ 0</span>
+        <span style="font-family:var(--mono);font-size:0.95rem;color:var(--danger)" id="total+gastos">$ 0</span>
       </div>
       <div class="total-row" id="row-efec-neto" style="display:none;border-top:1px solid var(--border2);margin-top:4px;padding-top:8px">
         <span>Efectivo neto</span>
@@ -319,8 +319,8 @@ function calcularEfectivo() {
 function calcular() {
   const totalEfectivo = BILLETES.reduce((s,b) => s + (parseInt(document.getElementById('b-'+b).value)||0)*b, 0);
   const gastos = totalGastos();
-  const efectivoNeto = totalEfectivo - gastos;
-  document.getElementById('total-gastos').textContent = money(gastos);
+  const efectivoNeto = totalEfectivo + gastos;
+  document.getElementById('total+gastos').textContent = money(gastos);
   const rowNeto = document.getElementById('row-efec-neto');
   if (gastos > 0) {
     rowNeto.style.display = 'flex';
