@@ -1113,17 +1113,11 @@ async function renderAnalisis() {
   if (!cfg.url) {
     saveCfg({ url: 'https://dihhccmimdzcfsjcobgs.supabase.co', key: 'sb_publishable_Sf68jNa72m3UJcsl014Vhg_sFp_BYqD' });
   }
-  // Check login
-  const sesion = sessionStorage.getItem('rdcaja_admin');
-  if (!sesion) {
-    document.getElementById('login-overlay').style.display = 'flex';
-  } else {
-    const u = JSON.parse(sesion);
-    document.getElementById('login-overlay').style.display = 'none';
-    document.getElementById('user-badge').textContent = u.nombre + ' · Salir';
-  }
+  // Siempre pedir login al entrar
+  sessionStorage.removeItem('rdcaja_admin');
+  document.getElementById('login-overlay').style.display = 'flex';
   // Enter en login
-  document.getElementById('l-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  document.getElementById('l-pass').addEventListener('keydown', function(e) { if(e.key==='Enter') doLogin(); });
 })();
 </script>
 </body>
