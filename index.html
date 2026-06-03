@@ -450,6 +450,7 @@ Usá esos valores como referencia para entender la estructura. Ahora extraé los
 Devolvé exactamente este JSON con los valores reales del documento:
 {
   "fecha": "DD/MM/AAAA",
+  "cajera": "nombre de la cajera",
   "efectivo_total": 0,
   "visa_credito": 0,
   "visa_debito": 0,
@@ -507,33 +508,64 @@ function money(v) { if (!v && v!==0) return '—'; return '$ ' + Number(v).toLoc
 
 function renderResults(d) {
   const grid = document.getElementById('results-grid');
+
+  // Calcular suma de medios de pago
+  const sumaMedios = (d.efectivo_total||0) + (d.visa_credito||0) + (d.visa_debito||0) +
+    (d.amex||0) + (d.mastercard||0) + (d.maestro||0) + (d.naranja||0) +
+    (d.transferencias||0) + (d.or_patagway||0) + (d.cuenta_dni||0);
+  const totalDoc = d.total_general||0;
+  const diferencia = sumaMedios - totalDoc;
+  const cuadra = Math.abs(diferencia) < 10;
+
   grid.innerHTML = `
-    <div class="card highlight" style="grid-column:1/-1">
-      <div class="card-title">Resumen</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.5rem">
-        <div><div style="font-size:0.7rem;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-bottom:3px">Fecha</div><div style="font-family:var(--mono);font-size:1rem;font-weight:700;color:var(--text)">${d.fecha||'—'}</div></div>
-        <div><div style="font-size:0.7rem;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-bottom:3px">Efectivo</div><div style="font-family:var(--mono);font-size:1rem;font-weight:700;color:var(--accent)">${money(d.efectivo_total)}</div></div>
-        <div><div style="font-size:0.7rem;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-bottom:3px">Total general</div><div style="font-family:var(--mono);font-size:1rem;font-weight:700;color:var(--accent)">${money(d.total_general)}</div></div>
+    <div class="card">
+      <div class="card-title">Identificación</div>
+      <div class="kv"><span class="kv-k">Fecha</span><span class="kv-v" style="font-size:1rem;font-weight:700">${d.fecha||'—'}</span></div>
+      <div class="kv"><span class="kv-k">Cajera</span><span class="kv-v" style="font-size:1rem;font-weight:700">${d.cajera||'—'}</span></div>
+    </div>
+
+    <div class="card highlight" id="card-total">
+      <div class="card-title">Total del formulario</div>
+      <div class="big-num">${money(totalDoc)}</div>
+      <div style="font-size:0.72rem;color:var(--text2);margin-top:0.3rem">indicado en el formulario</div>
+    </div>
+
+    <div class="card full">
+      <div class="card-title">Medios de pago</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 1rem">
+        ${[
+          ['Efectivo',       d.efectivo_total],
+          ['Visa Crédito',   d.visa_credito],
+          ['Visa Débito',    d.visa_debito],
+          ['Amex',           d.amex],
+          ['Mastercard',     d.mastercard],
+          ['Maestro',        d.maestro],
+          ['Naranja',        d.naranja],
+          ['Transferencias', d.transferencias],
+          ['OR Payway',      d.or_patagway],
+          ['Cuenta DNI',     d.cuenta_dni],
+        ].map(([k,v]) => `
+          <div class="kv">
+            <span class="kv-k">${k}</span>
+            <span class="kv-v ${v>0?'ac':''}">${money(v)}</span>
+          </div>`).join('')}
+        <div class="kv" style="border-top:1px solid var(--border2);margin-top:0.3rem;padding-top:0.4rem;grid-column:1/-1">
+          <span class="kv-k" style="font-weight:600;color:var(--text)">Suma calculada</span>
+          <span class="kv-v ac" style="font-size:1rem;font-weight:700">${money(sumaMedios)}</span>
+        </div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-title">Tarjetas</div>
-      ${[
-        ['Visa Crédito', d.visa_credito],
-        ['Visa Débito',  d.visa_debito],
-        ['Amex',         d.amex],
-        ['Mastercard',   d.mastercard],
-        ['Maestro',      d.maestro],
-        ['Naranja',      d.naranja],
-      ].map(([k,v]) => `<div class="kv"><span class="kv-k">${k}</span><span class="kv-v ${v>0?'ac':''}">${money(v)}</span></div>`).join('')}
-    </div>
-    <div class="card">
-      <div class="card-title">Otros cobros</div>
-      ${[
-        ['Transferencias', d.transferencias],
-        ['OR Payway',      d.or_patagway],
-        ['Cuenta DNI',     d.cuenta_dni],
-      ].map(([k,v]) => `<div class="kv"><span class="kv-k">${k}</span><span class="kv-v ${v>0?'ac':''}">${money(v)}</span></div>`).join('')}
+
+    <div class="card full" style="border-color:${cuadra?'var(--accent)':'var(--danger)'}">
+      <div class="card-title" style="color:${cuadra?'var(--accent)':'var(--danger)'}">
+        ${cuadra ? '✓ Los valores cuadran' : '⚠ Diferencia detectada'}
+      </div>
+      <div style="font-family:var(--mono);font-size:0.9rem;color:${cuadra?'var(--accent)':'var(--danger)'}">
+        ${cuadra
+          ? `Suma de medios (${money(sumaMedios)}) = Total del formulario (${money(totalDoc)})`
+          : `Suma de medios: ${money(sumaMedios)} — Total formulario: ${money(totalDoc)} — Diferencia: ${money(Math.abs(diferencia))} ${diferencia>0?'(sobra)':'(falta)'}`
+        }
+      </div>
     </div>
   `;
   document.getElementById('results').style.display = 'block';
