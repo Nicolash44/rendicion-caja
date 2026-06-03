@@ -98,7 +98,7 @@
   </div>
 
   <!-- FORMULARIO -->
-  <div id="form-section">
+  <div id="form-section" style="display:none">
 
     <div class="user-bar">
       <span>Cargando como <strong id="user-name">—</strong></span>
@@ -130,19 +130,19 @@
       </div>
     </div>
 
-    <div class="card" id="card+gastos">
+    <div class="card" id="card-gastos">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-        Gastos <span style="font-size:0.7rem;color:var(--text3)">(se restan del efectivo)</span>
+        Gastos <span style="font-size:0.7rem;color:var(--text3)">(se suman al efectivo)</span>
         <button onclick="agregarGasto()" style="font-family:var(--mono);font-size:0.72rem;padding:2px 10px;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer">+ Agregar</button>
       </div>
-      <div id="lista+gastos"></div>
-      <div class="total+row">
+      <div id="lista-gastos"></div>
+      <div class="total-row">
         <span>Total gastos</span>
-        <span style="font-family:var(--mono);font-size:0.95rem;color:var(--danger)" id="total+gastos">$ 0</span>
+        <span style="font-family:var(--mono);font-size:0.95rem;color:var(--danger)" id="total-gastos">$ 0</span>
       </div>
       <div class="total-row" id="row-efec-neto" style="display:none;border-top:1px solid var(--border2);margin-top:4px;padding-top:8px">
-        <span>Efectivo neto</span>
-        <span class="val" id="efec+neto">$ 0</span>
+        <span>Efectivo total (con gastos)</span>
+        <span class="val" id="efec-neto">$ 0</span>
       </div>
     </div>
 
@@ -162,26 +162,59 @@
       <div class="input-row"><label>OR Payway</label><input type="number" id="f-or" value="0" min="0" oninput="calcular()"></div>
       <div class="input-row"><label>Cuenta DNI</label><input type="number" id="f-cdni" value="0" min="0" oninput="calcular()"></div>
     </div>
-
-    <div class="card">
-      <div class="card-title">Observaciones</div>
-      <textarea id="f-obs" placeholder="Anotá cualquier novedad del turno..." rows="3"
-        style="width:100%;font-family:var(--sans);font-size:0.85rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.55rem 0.75rem;resize:vertical;line-height:1.5"></textarea>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Total del formulario</div>
-      <div class="input-row">
-        <label>Total indicado en el papel $</label>
-        <input type="number" id="f-total" value="0" min="0" oninput="calcular()">
-      </div>
-      <div class="total-row">
+<div class="total-row">
         <span>Suma calculada</span>
         <span class="val" id="suma-calc">$ 0</span>
       </div>
     </div>
 
     <div class="verificacion" id="verif" style="display:none"></div>
+
+    <!-- TURNO SISTEMA -->
+    <div class="card">
+      <div class="card-title">Turno sistema</div>
+      <div class="input-row">
+        <label>Nota de credito (NC) <span style="font-size:0.7rem;color:var(--text3)">menor o igual a 0</span></label>
+        <input type="number" id="ts-nc" value="0" oninput="validarTS();calcularDiferenciaFull()" style="width:140px;font-family:var(--mono);font-size:0.88rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.35rem 0.6rem;text-align:right">
+      </div>
+      <div class="input-row">
+        <label>Cierre Z (FC) <span style="font-size:0.7rem;color:var(--text3)">mayor a 0</span></label>
+        <input type="number" id="ts-cz" value="0" oninput="validarTS();calcularDiferenciaFull()" style="width:140px;font-family:var(--mono);font-size:0.88rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.35rem 0.6rem;text-align:right">
+      </div>
+      <div class="input-row">
+        <label>PR <span style="font-size:0.7rem;color:var(--text3)">mayor o igual a 0</span></label>
+        <input type="number" id="ts-pr" value="0" oninput="validarTS();calcularDiferenciaFull()" style="width:140px;font-family:var(--mono);font-size:0.88rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.35rem 0.6rem;text-align:right">
+      </div>
+      <div class="total-row">
+        <span>Venta total turno</span>
+        <span class="val" id="ts-total">$ 0</span>
+      </div>
+      <div id="ts-errors" style="font-family:var(--mono);font-size:0.75rem;color:var(--danger);margin-top:0.4rem;display:none"></div>
+    </div>
+
+    <div class="card" id="card-diferencia">
+      <div class="card-title">Diferencia</div>
+      <div class="input-row">
+        <label>Total turno (sistema)</label>
+        <span style="font-family:var(--mono);font-size:0.9rem;font-weight:600;color:var(--text)" id="dif-turno">$ 0</span>
+      </div>
+      <div class="input-row">
+        <label>Total real (cobrado)</label>
+        <span style="font-family:var(--mono);font-size:0.9rem;font-weight:600;color:var(--accent)" id="dif-real">$ 0</span>
+      </div>
+      <div class="total-row" style="border-top:1px solid var(--border2);margin-top:0.4rem;padding-top:0.6rem">
+        <span style="font-weight:600">Diferencia</span>
+        <span style="font-family:var(--mono);font-size:1.1rem;font-weight:700" id="dif-result">$ 0</span>
+      </div>
+    </div>
+
+
+
+    <div class="card">
+      <div class="card-title">Observaciones</div>
+      <textarea id="f-obs" placeholder="Anotá cualquier novedad del turno..." rows="3"
+        style="width:100%;font-family:var(--sans);font-size:0.85rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.55rem 0.75rem;resize:vertical;line-height:1.5"></textarea>
+    </div>
 
     <button class="btn primary" id="btn-guardar" onclick="guardar()">Guardar rendición</button>
     <div class="err" id="form-err" style="margin-top:0.75rem"></div>
@@ -266,6 +299,53 @@ function money(n) { return '$ ' + Number(n).toLocaleString('es-AR'); }
 
 const BILLETES = [20000, 10000, 2000, 1000, 500, 200, 100, 50, 20];
 
+var tsErrors = [];
+
+function validarTS() {
+  var nc = parseFloat(document.getElementById('ts-nc').value) || 0;
+  var cz = parseFloat(document.getElementById('ts-cz').value) || 0;
+  var pr = parseFloat(document.getElementById('ts-pr').value) || 0;
+  var errors = [];
+  if (nc > 0) errors.push('NC debe ser 0 o menor a 0');
+  if (cz <= 0 && cz !== 0) errors.push('Cierre Z debe ser mayor a 0');
+  if (pr < 0) errors.push('PR debe ser 0 o mayor a 0');
+  var errEl = document.getElementById('ts-errors');
+  if (errors.length) {
+    errEl.textContent = errors.join(' · ');
+    errEl.style.display = 'block';
+  } else {
+    errEl.style.display = 'none';
+  }
+  var totalTS = nc + cz + pr;
+  document.getElementById('ts-total').textContent = money(totalTS);
+  return errors.length === 0;
+}
+
+function calcularDiferencia(totalReal) {
+  var nc = parseFloat(document.getElementById('ts-nc').value) || 0;
+  var cz = parseFloat(document.getElementById('ts-cz').value) || 0;
+  var pr = parseFloat(document.getElementById('ts-pr').value) || 0;
+  var totalTurno = nc + cz + pr;
+  document.getElementById('ts-total').textContent = money(totalTurno);
+  document.getElementById('dif-turno').textContent = money(totalTurno);
+  document.getElementById('dif-real').textContent = money(totalReal);
+  var dif = totalReal - totalTurno;
+  var difEl = document.getElementById('dif-result');
+  difEl.textContent = (dif >= 0 ? '+' : '') + money(dif);
+  difEl.style.color = Math.abs(dif) < 10 ? 'var(--accent)' : 'var(--danger)';
+}
+
+function calcularDiferenciaFull() {
+  var totalEfectivo = BILLETES.reduce(function(s,b) {
+    return s + (parseInt(document.getElementById('b-'+b).value)||0)*b;
+  }, 0);
+  var gastos = totalGastos();
+  var totalReal = totalEfectivo + gastos + v('f-visa-cred') + v('f-visa-deb') +
+    v('f-amex') + v('f-mastercard') + v('f-maestro') + v('f-naranja') +
+    v('f-transf') + v('f-or') + v('f-cdni');
+  calcularDiferencia(totalReal);
+}
+
 let gastoItems = [];
 let gastoId = 0;
 
@@ -282,7 +362,7 @@ function eliminarGasto(id) {
 }
 
 function renderGastos() {
-  const lista = document.getElementById('lista+gastos');
+  const lista = document.getElementById('lista-gastos');
   if (!gastoItems.length) {
     lista.innerHTML = '<div style="font-family:var(--mono);font-size:0.78rem;color:var(--text3);padding:0.4rem 0">Sin gastos cargados.</div>';
     return;
@@ -317,21 +397,24 @@ function calcularEfectivo() {
 }
 
 function calcular() {
-  const totalEfectivo = BILLETES.reduce((s,b) => s + (parseInt(document.getElementById('b-'+b).value)||0)*b, 0);
-  const gastos = totalGastos();
-  const efectivoNeto = totalEfectivo + gastos;
-  document.getElementById('total+gastos').textContent = money(gastos);
-  const rowNeto = document.getElementById('row-efec-neto');
+  var totalEfectivo = BILLETES.reduce(function(s,b) {
+    return s + (parseInt(document.getElementById('b-'+b).value)||0)*b;
+  }, 0);
+  var gastos = totalGastos();
+  var efectivoTotal = totalEfectivo + gastos;
+  document.getElementById('total-gastos').textContent = money(gastos);
+  var rowNeto = document.getElementById('row-efec-neto');
   if (gastos > 0) {
     rowNeto.style.display = 'flex';
-    document.getElementById('efec-neto').textContent = money(efectivoNeto);
+    document.getElementById('efec-neto').textContent = money(efectivoTotal);
   } else {
     rowNeto.style.display = 'none';
   }
-  const suma = efectivoNeto + v('f-visa-cred') + v('f-visa-deb') +
+  var totalReal = efectivoTotal + v('f-visa-cred') + v('f-visa-deb') +
     v('f-amex') + v('f-mastercard') + v('f-maestro') + v('f-naranja') +
     v('f-transf') + v('f-or') + v('f-cdni');
-  document.getElementById('suma-calc').textContent = money(suma);
+  document.getElementById('suma-calc').textContent = money(totalReal);
+  calcularDiferencia(totalReal);
 
   const total = v('f-total');
   const verif = document.getElementById('verif');
@@ -417,8 +500,12 @@ async function guardar() {
     transferencias: vn('f-transf'),
     or_patagway:    vn('f-or'),
     cuenta_dni:     vn('f-cdni'),
-    total_general:  vn('f-total') || (efectivoNeto + vn('f-visa-cred') + vn('f-visa-deb') + vn('f-amex') + vn('f-mastercard') + vn('f-maestro') + vn('f-naranja') + vn('f-transf') + vn('f-or') + vn('f-cdni')),
+    total_general:  totalEfectivo + gastos + vn('f-visa-cred') + vn('f-visa-deb') + vn('f-amex') + vn('f-mastercard') + vn('f-maestro') + vn('f-naranja') + vn('f-transf') + vn('f-or') + vn('f-cdni'),
     observaciones:  document.getElementById('f-obs').value.trim()||null,
+    ts_nc: parseFloat(document.getElementById('ts-nc').value)||0,
+    ts_cz: parseFloat(document.getElementById('ts-cz').value)||0,
+    ts_pr: parseFloat(document.getElementById('ts-pr').value)||0,
+    ts_venta_total: (parseFloat(document.getElementById('ts-nc').value)||0)+(parseFloat(document.getElementById('ts-cz').value)||0)+(parseFloat(document.getElementById('ts-pr').value)||0),
   };
 
   var ok = await supaGuardar(row);
@@ -429,9 +516,12 @@ async function guardar() {
   if (ok) {
     toast('Rendicion guardada ✓', 'ok');
     BILLETES.forEach(function(b){ document.getElementById('b-'+b).value = 0; document.getElementById('s-'+b).textContent = '$ 0'; });
-    ['f-visa-cred','f-visa-deb','f-amex','f-mastercard','f-maestro','f-naranja','f-transf','f-or','f-cdni','f-total'].forEach(function(id){ document.getElementById(id).value = 0; });
+    ['f-visa-cred','f-visa-deb','f-amex','f-mastercard','f-maestro','f-naranja','f-transf','f-or','f-cdni','].forEach(function(id){ document.getElementById(id).value = 0; });
     gastoItems = []; gastoId = 0; renderGastos();
     document.getElementById('f-obs').value = '';
+    ['ts-nc','ts-cz','ts-pr'].forEach(function(id){ document.getElementById(id).value = 0; });
+    document.getElementById('ts-total').textContent = '$ 0';
+    calcularDiferenciaFull();
     document.getElementById('total-efectivo').textContent = '$ 0';
     document.getElementById('row-efec-neto').style.display = 'none';
     document.getElementById('verif').style.display = 'none';
