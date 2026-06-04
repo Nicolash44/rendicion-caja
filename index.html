@@ -156,6 +156,21 @@ function doLogout() {
   sessionStorage.removeItem('rdcaja_admin');
   window.location.href = 'index.html';
 }
+
+// ══ INIT ═════════════════════════════════════════════════════════
+(function() {
+  // Siempre limpiar sesión y pedir login al entrar
+  sessionStorage.removeItem('rdcaja_admin');
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('l-pass').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doLogin();
+  });
+  // Precargar config Supabase
+  var cfg = getCfg();
+  if (!cfg.url) {
+    saveCfg({ url: 'https://dihhccmimdzcfsjcobgs.supabase.co', key: 'sb_publishable_Sf68jNa72m3UJcsl014Vhg_sFp_BYqD' });
+  }
+})();
 </script>
 </head>
 <body>
