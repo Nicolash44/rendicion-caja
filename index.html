@@ -492,6 +492,13 @@ async function addHistory(d) {
 }
 
 // ══ TABS ═════════════════════════════════════════════════════════
+function esReadonly() {
+  var s = sessionStorage.getItem('rdcaja_admin');
+  if (!s) return false;
+  var u = JSON.parse(s);
+  return u.rol === 'readonly';
+}
+
 function mostrarSoloLectura() {
   // Ocultar tabs de scanner y config, solo mostrar historial y analisis
   var tabs = document.querySelectorAll('.tab-nav button');
@@ -798,10 +805,11 @@ async function renderHistorial() {
       '<td class="ac" style="color:' + (cuadra?'var(--accent)':'var(--danger)') + '">' +
         (cuadra ? '✓' : money(sumaMedios) + '<br><span style="font-size:10px">' + (difVal>0?'+':'') + money(difVal) + '</span>') +
       '</td>' +
-      '<td style="display:flex;gap:4px">' +
+      (esReadonly() ? '<td></td>' :
+        '<td style="display:flex;gap:4px">' +
         '<button class="btn" style="font-size:11px;padding:2px 7px" onclick="event.stopPropagation();abrirEditar(' + r._id + ')">✎</button>' +
         '<button class="btn" style="font-size:11px;padding:2px 7px;color:var(--danger)" onclick="event.stopPropagation();eliminar(' + r._id + ')">✕</button>' +
-      '</td>';
+        '</td>');
     tbody.appendChild(tr2);
   });
 }
