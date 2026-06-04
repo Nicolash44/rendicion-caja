@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rendición de Caja v4</title>
+<title>Caja v4</title>
 <style>
   :root {
     --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #222;
@@ -733,7 +733,7 @@ async function renderHistorial() {
     '<div class="tc"><div class="tc-l">Efectivo</div><div class="tc-v">' + money(te) + '</div></div>' +
     '<div class="tc"><div class="tc-l">Tarjetas</div><div class="tc-v">' + money(ttarj) + '</div></div>' +
     '<div class="tc"><div class="tc-l">Transfer+QR</div><div class="tc-v">' + money(ttr) + '</div></div>' +
-    '<div class="tc" style="border-color:' + (ndif>0?'var(--danger)':'var(--accent)') + '"><div class="tc-l">Con diferencia</div><div class="tc-v' + (ndif>0?' neg':'') + '">' + ndif + '</div></div>';
+    '<div class="tc"><div class="tc-l">Gastos</div><div class="tc-v" style="color:var(--warn)">' + money(tgastos) + '</div></div>';
 
   const tbody = document.getElementById('hist-body');
   const empty = document.getElementById('hist-empty');
@@ -894,7 +894,12 @@ function openModal(r) {
 
   document.getElementById('modal-body').innerHTML =
     '<div class="msec"><h4>Identificacion</h4>' + kv2('Fecha',r.fecha||'—') + kv2('Cajera',r.cajera||'—') + '</div>' +
-    '<div class="msec"><h4>Efectivo</h4>' + kv2('Efectivo bruto',money(r.efectivo_bruto||r.efectivo_total)) + '</div>' +
+    '<div class="msec"><h4>Efectivo</h4>' +
+      kv2('Efectivo (billetes)', money(r.efectivo_bruto||r.efectivo_total)) +
+      (r.gastos ? kv2('Gastos', money(r.gastos)) : '') +
+      (r.gastos_desc ? '<div style="font-family:var(--sans);font-size:0.78rem;color:var(--text2);padding:0.2rem 0 0.4rem;font-style:italic">' + r.gastos_desc + '</div>' : '') +
+      (r.gastos ? kv2('Efectivo neto', money((r.efectivo_bruto||r.efectivo_total||0)+(r.gastos||0))) : '') +
+    '</div>' +
     '<div class="msec"><h4>Tarjetas</h4>' +
       kv2('Visa Credito',money(r.visa_credito)) +
       kv2('Visa Debito',money(r.visa_debito)) +
