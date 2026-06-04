@@ -516,7 +516,7 @@ async function guardar() {
   if (ok) {
     toast('Rendicion guardada ✓', 'ok');
     BILLETES.forEach(function(b){ document.getElementById('b-'+b).value = 0; document.getElementById('s-'+b).textContent = '$ 0'; });
-    ['f-visa-cred','f-visa-deb','f-amex','f-mastercard','f-maestro','f-naranja','f-transf','f-or','f-cdni','].forEach(function(id){ document.getElementById(id).value = 0; });
+    ['f-visa-cred','f-visa-deb','f-amex','f-mastercard','f-maestro','f-naranja','f-transf','f-or','f-cdni'].forEach(function(id){ document.getElementById(id).value = 0; });
     gastoItems = []; gastoId = 0; renderGastos();
     document.getElementById('f-obs').value = '';
     ['ts-nc','ts-cz','ts-pr'].forEach(function(id){ document.getElementById(id).value = 0; });
