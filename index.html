@@ -489,15 +489,7 @@ function showTab(t) {
   if (t === 'analisis') renderAnalisis();
 }
 
-// ══ UPLOAD ═══════════════════════════════════════════════════════
-let imgB64 = null, imgType = null, lastData = null;
-
-const dz = document.getElementById('drop-zone');
-const fi = document.getElementById('file-in');
-dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
-dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
-dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); const f=e.dataTransfer.files[0]; if(f) loadFile(f); });
-fi.addEventListener('change', e => { if(e.target.files[0]) loadFile(e.target.files[0]); });
+// Upload section removed
 
 function loadFile(f) {
   const isPDF = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
