@@ -146,6 +146,7 @@ async function doLogin() {
     } else {
       document.getElementById('login-overlay').style.display = 'none';
       document.getElementById('user-badge').textContent = u.nombre + ' · Salir';
+      showTab('historial');
     }
   } catch(e) {
     document.getElementById('l-err').textContent = 'Error de conexion.';
@@ -199,57 +200,13 @@ function doLogout() {
 
 <div class="container">
   <div class="tab-nav">
-    <button class="active" onclick="showTab('scanner')">Escanear</button>
-    <button onclick="showTab('historial')">Historial</button>
+    <button class="active" onclick="showTab('historial')">Historial</button>
     <button onclick="showTab('analisis')">Análisis</button>
     <button onclick="showTab('config')">Configuración</button>
   </div>
 
-  <!-- ══ TAB SCANNER ══ -->
-  <div id="tab-scanner" class="tab-content active">
-
-    <div class="upload-area" id="drop-zone" onclick="document.getElementById('file-in').click()">
-      <div style="font-size:2rem;margin-bottom:0.6rem">📄</div>
-      <p><strong>Subí el PDF o foto de la rendición</strong></p>
-      <p>PDF · JPG · PNG — arrastrá o hacé clic</p>
-    </div>
-    <input type="file" id="file-in" accept="image/*,application/pdf,.pdf">
-
-    <div class="preview-bar" id="preview-bar">
-      <img id="thumb" alt="preview">
-      <div class="fi">
-        <strong id="fname">—</strong>
-        <span id="fsize">—</span>
-      </div>
-      <div class="btn-row">
-        <button class="btn" onclick="document.getElementById('file-in').click()">Cambiar</button>
-        <button class="btn primary" id="scan-btn" onclick="scan()">✦ Escanear</button>
-      </div>
-    </div>
-
-    <div class="status" id="status">
-      <p style="font-family:var(--mono);font-size:0.84rem;color:var(--text2)">
-        <span class="spinner"></span>Analizando con IA…
-      </p>
-    </div>
-
-    <div class="err-box" id="err-box"></div>
-
-    <div id="results" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
-        <span style="font-family:var(--mono);font-size:0.84rem;color:var(--accent);font-weight:700">DATOS EXTRAÍDOS</span>
-        <div class="btn-row">
-          <button class="btn" onclick="exportCSVUnico()">Exportar CSV</button>
-          <button class="btn" onclick="copyJSON()">Copiar JSON</button>
-        </div>
-      </div>
-
-      <div class="data-grid" id="results-grid"></div>
-    </div>
-  </div>
-
   <!-- ══ TAB HISTORIAL ══ -->
-  <div id="tab-historial" class="tab-content">
+  <div id="tab-historial" class="tab-content active">
     <div class="search-bar">
       <input type="date" id="s-from" title="Desde">
       <input type="date" id="s-to" title="Hasta">
