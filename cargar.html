@@ -132,20 +132,20 @@
     <!-- TARJETAS -->
     <div class="card">
       <div class="card-title">Tarjetas</div>
-      <div class="input-row"><label>Visa Crédito</label><input type="number" id="f-visa-cred" value="0" min="0" oninput="calcular()"></div>
-      <div class="input-row"><label>Visa Débito</label><input type="number" id="f-visa-deb" value="0" min="0" oninput="calcular()"></div>
-      <div class="input-row"><label>Amex</label><input type="number" id="f-amex" value="0" min="0" oninput="calcular()"></div>
-      <div class="input-row"><label>Mastercard</label><input type="number" id="f-mastercard" value="0" min="0" oninput="calcular()"></div>
-      <div class="input-row"><label>Maestro</label><input type="number" id="f-maestro" value="0" min="0" oninput="calcular()"></div>
-      <div class="input-row"><label>Naranja</label><input type="number" id="f-naranja" value="0" min="0" oninput="calcular()"></div>
+      <div class="input-row"><label>Visa Crédito</label><input type="number" id="f-visa-cred" value="0" min="0" oninput="if(parseFloat(this.value)<0)this.value=0;calcular()"></div>
+      <div class="input-row"><label>Visa Débito</label><input type="number" id="f-visa-deb" value="0" min="0" oninput="if(parseFloat(this.value)<0)this.value=0;calcular()"></div>
+      <div class="input-row"><label>Amex</label><input type="number" id="f-amex" value="0" min="0" oninput="if(parseFloat(this.value)<0)this.value=0;calcular()"></div>
+      <div class="input-row"><label>Mastercard</label><input type="number" id="f-mastercard" value="0" min="0" oninput="if(parseFloat(this.value)<0)this.value=0;calcular()"></div>
+      <div class="input-row"><label>Maestro</label><input type="number" id="f-maestro" value="0" min="0" oninput="if(parseFloat(this.value)<0)this.value=0;calcular()"></div>
+      <div class="input-row"><label>Naranja</label><input type="number" id="f-naranja" value="0" min="0" oninput="if(parseFloat(this.value)<0)this.value=0;calcular()"></div>
     </div>
 
     <!-- OTROS MEDIOS -->
     <div class="card">
       <div class="card-title">Otros medios</div>
-      <div class="input-row"><label>Transferencias</label><input type="number" id="f-transf" value="0" min="0" oninput="calcular()"></div>
-      <div class="input-row"><label>QR Payway</label><input type="number" id="f-or" value="0" min="0" oninput="calcular()"></div>
-      <div class="input-row"><label>Cuenta DNI</label><input type="number" id="f-cdni" value="0" min="0" oninput="calcular()"></div>
+      <div class="input-row"><label>Transferencias</label><input type="number" id="f-transf" value="0" min="0" oninput="if(parseFloat(this.value)<0)this.value=0;calcular()"></div>
+      <div class="input-row"><label>QR Payway</label><input type="number" id="f-or" value="0" min="0" oninput="if(parseFloat(this.value)<0)this.value=0;calcular()"></div>
+      <div class="input-row"><label>Cuenta DNI</label><input type="number" id="f-cdni" value="0" min="0" oninput="if(parseFloat(this.value)<0)this.value=0;calcular()"></div>
     </div>
 
     <!-- TURNO SISTEMA -->
@@ -153,15 +153,15 @@
       <div class="card-title">Turno sistema</div>
       <div class="input-row">
         <label>Nota de crédito (NC) <span style="font-size:0.7rem;color:var(--text3)">≤ 0</span></label>
-        <input type="number" id="ts-nc" value="0" oninput="validarTS();calcular()">
+        <input type="number" id="ts-nc" value="0" max="0" oninput="if(parseFloat(this.value)>0)this.value=0;validarTS();calcular()">
       </div>
       <div class="input-row">
         <label>Cierre Z (FC) <span style="font-size:0.7rem;color:var(--text3)">&gt; 0</span></label>
-        <input type="number" id="ts-cz" value="0" oninput="validarTS();calcular()">
+        <input type="number" id="ts-cz" value="0" min="0" oninput="if(parseFloat(this.value)<0)this.value=0;validarTS();calcular()">
       </div>
       <div class="input-row">
         <label>PR <span style="font-size:0.7rem;color:var(--text3)">≥ 0</span></label>
-        <input type="number" id="ts-pr" value="0" oninput="validarTS();calcular()">
+        <input type="number" id="ts-pr" value="0" min="0" oninput="if(parseFloat(this.value)<0)this.value=0;validarTS();calcular()">
       </div>
       <div class="total-row"><span>Venta total turno</span><span class="val" id="ts-total">$ 0</span></div>
       <div class="val-err" id="ts-errors"></div>
