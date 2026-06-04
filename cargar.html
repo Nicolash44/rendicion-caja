@@ -104,15 +104,15 @@
     <!-- EFECTIVO -->
     <div class="card">
       <div class="card-title">Efectivo — Billetes</div>
-      <div class="input-row"><label>$ 20.000</label><input type="number" id="b-20000" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-20000">$ 0</span></div>
-      <div class="input-row"><label>$ 10.000</label><input type="number" id="b-10000" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-10000">$ 0</span></div>
-      <div class="input-row"><label>$ 2.000</label><input type="number" id="b-2000" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-2000">$ 0</span></div>
-      <div class="input-row"><label>$ 1.000</label><input type="number" id="b-1000" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-1000">$ 0</span></div>
-      <div class="input-row"><label>$ 500</label><input type="number" id="b-500" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-500">$ 0</span></div>
-      <div class="input-row"><label>$ 200</label><input type="number" id="b-200" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-200">$ 0</span></div>
-      <div class="input-row"><label>$ 100</label><input type="number" id="b-100" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-100">$ 0</span></div>
-      <div class="input-row"><label>$ 50</label><input type="number" id="b-50" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-50">$ 0</span></div>
-      <div class="input-row"><label>$ 20</label><input type="number" id="b-20" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-20">$ 0</span></div>
+      <div class="input-row"><label>$ 20.000</label><input type="number" id="b-20000" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcularEfectivo()" onblur="if(parseFloat(this.value)<0)this.value=0;"><span class="billete-sub" id="s-20000">$ 0</span></div>
+      <div class="input-row"><label>$ 10.000</label><input type="number" id="b-10000" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcularEfectivo()" onblur="if(parseFloat(this.value)<0)this.value=0;"><span class="billete-sub" id="s-10000">$ 0</span></div>
+      <div class="input-row"><label>$ 2.000</label><input type="number" id="b-2000" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcularEfectivo()" onblur="if(parseFloat(this.value)<0)this.value=0;"><span class="billete-sub" id="s-2000">$ 0</span></div>
+      <div class="input-row"><label>$ 1.000</label><input type="number" id="b-1000" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcularEfectivo()" onblur="if(parseFloat(this.value)<0)this.value=0;"><span class="billete-sub" id="s-1000">$ 0</span></div>
+      <div class="input-row"><label>$ 500</label><input type="number" id="b-500" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcularEfectivo()" onblur="if(parseFloat(this.value)<0)this.value=0;"><span class="billete-sub" id="s-500">$ 0</span></div>
+      <div class="input-row"><label>$ 200</label><input type="number" id="b-200" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcularEfectivo()" onblur="if(parseFloat(this.value)<0)this.value=0;"><span class="billete-sub" id="s-200">$ 0</span></div>
+      <div class="input-row"><label>$ 100</label><input type="number" id="b-100" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcularEfectivo()" onblur="if(parseFloat(this.value)<0)this.value=0;"><span class="billete-sub" id="s-100">$ 0</span></div>
+      <div class="input-row"><label>$ 50</label><input type="number" id="b-50" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcularEfectivo()" onblur="if(parseFloat(this.value)<0)this.value=0;"><span class="billete-sub" id="s-50">$ 0</span></div>
+      <div class="input-row"><label>$ 20</label><input type="number" id="b-20" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcularEfectivo()" onblur="if(parseFloat(this.value)<0)this.value=0;"><span class="billete-sub" id="s-20">$ 0</span></div>
       <div class="total-row"><span>Total efectivo</span><span class="val" id="total-efectivo">$ 0</span></div>
     </div>
 
