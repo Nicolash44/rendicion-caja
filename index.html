@@ -134,8 +134,9 @@ async function doLogin() {
     var data = await r.json();
     if (!data || !data.length) { document.getElementById('l-err').style.display='block'; return; }
     var u = data[0];
-    sessionStorage.setItem('rdcaja_admin', JSON.stringify({user:user, nombre:u.nombre, admin:u.admin, rol:u.rol||'cajera'}));
-    var rol = (u.rol||'').trim();
+    var rolVal = (u.rol||'cajera').trim();
+    sessionStorage.setItem('rdcaja_admin', JSON.stringify({user:user, nombre:u.nombre, admin:u.admin, rol:rolVal}));
+    var rol = rolVal;
     if (rol === 'readonly') {
       document.getElementById('login-overlay').style.display = 'none';
       document.getElementById('user-badge').textContent = u.nombre + ' · Salir';
