@@ -925,9 +925,10 @@ function openModal(r) {
       kv2('OR Payway',money(r.or_patagway)) +
       kv2('Cuenta DNI',money(r.cuenta_dni)) +
     '</div>' +
-    '<div class="msec"><h4>Total</h4>' +
-      kv2('Total formulario',money(totalDoc)) +
-      kv2('Suma calculada','<span style="color:'+difColor+'">' + money(sumaMedios) + (cuadra?' ✓':' ⚠') + '</span>') +
+    '<div class="msec"><h4>Diferencia</h4>' +
+      kv2('Total turno (sistema)',money(r.ts_venta_total||0)) +
+      kv2('Total real (cobrado)','<span style="color:var(--accent)">' + money(sumaMedios) + '</span>') +
+      kv2('Diferencia','<span style="color:'+difColor+'">' + (sumaMedios-(r.ts_venta_total||0)>=0?'+':'') + money(sumaMedios-(r.ts_venta_total||0)) + '</span>') +
     '</div>' +
     (r.observaciones ? '<div class="msec"><h4>Observaciones</h4><div class="obs-box">' + r.observaciones + '</div></div>' : '');
 
