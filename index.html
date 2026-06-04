@@ -753,7 +753,7 @@ async function renderHistorial() {
     tr2.innerHTML =
       '<td>' + (r.fecha||'—') + '</td>' +
       '<td>' + (r.cajera||'—') + '</td>' +
-      '<td class="ac">' + money(r.efectivo_total) + '</td>' +
+      '<td class="ac">' + money(r.efectivo_bruto||r.efectivo_total) + '</td>' +
       '<td class="ac">' + money(tarjetas) + '</td>' +
       '<td class="ac">' + money(r.transferencias) + '</td>' +
       '<td class="ac">' + money(r.total_general) + '</td>' +
@@ -894,7 +894,7 @@ function openModal(r) {
 
   document.getElementById('modal-body').innerHTML =
     '<div class="msec"><h4>Identificacion</h4>' + kv2('Fecha',r.fecha||'—') + kv2('Cajera',r.cajera||'—') + '</div>' +
-    '<div class="msec"><h4>Efectivo</h4>' + kv2('Total efectivo',money(r.efectivo_total)) + '</div>' +
+    '<div class="msec"><h4>Efectivo</h4>' + kv2('Efectivo bruto',money(r.efectivo_bruto||r.efectivo_total)) + '</div>' +
     '<div class="msec"><h4>Tarjetas</h4>' +
       kv2('Visa Credito',money(r.visa_credito)) +
       kv2('Visa Debito',money(r.visa_debito)) +
@@ -1067,7 +1067,7 @@ async function renderAnalisis() {
   lista.sort(function(a,b){ return fechaSort(a.fecha) < fechaSort(b.fecha) ? -1 : 1; });
 
   var ttg   = lista.reduce(function(s,r){ return s+(r.total_general||0); }, 0);
-  var te    = lista.reduce(function(s,r){ return s+(r.efectivo_total||0); }, 0);
+  var te    = lista.reduce(function(s,r){ return s+(r.efectivo_bruto||r.efectivo_total||0); }, 0);
   var ttarj = lista.reduce(function(s,r){ return s+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0); }, 0);
   var ttr   = lista.reduce(function(s,r){ return s+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0); }, 0);
 
@@ -1152,7 +1152,7 @@ async function renderAnalisis() {
     var tr2 = document.createElement('tr');
     tr2.innerHTML = '<td>' + (r.fecha||'—') + '</td>' +
       '<td>' + (r.cajera||'—') + '</td>' +
-      '<td class="ac">' + money(r.efectivo_total) + '</td>' +
+      '<td class="ac">' + money(r.efectivo_bruto||r.efectivo_total) + '</td>' +
       '<td class="ac">' + money(tarj) + '</td>' +
       '<td class="ac">' + money(transf) + '</td>' +
       '<td class="ac">' + money(r.total_general) + '</td>';
