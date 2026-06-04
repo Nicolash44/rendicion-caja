@@ -374,7 +374,13 @@ function calcular() {
   var dif = totalReal - totalTurno;
   var difEl = document.getElementById('dif-result');
   difEl.textContent = (dif >= 0 ? '+' : '') + money(dif);
-  difEl.style.color = Math.abs(dif) < 10 ? 'var(--accent)' : 'var(--danger)';
+  if (dif === 0) {
+    difEl.style.color = 'var(--accent)';
+  } else if (Math.abs(dif) <= 100) {
+    difEl.style.color = 'var(--warn)';
+  } else {
+    difEl.style.color = 'var(--danger)';
+  }
 }
 
 async function guardar() {
