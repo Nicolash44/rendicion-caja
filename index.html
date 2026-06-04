@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Caja v4</title>
+<title>Rendición de Caja v4</title>
 <style>
   :root {
     --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #222;
@@ -1075,6 +1075,7 @@ async function renderAnalisis() {
   var te    = lista.reduce(function(s,r){ return s+(r.efectivo_bruto||r.efectivo_total||0); }, 0);
   var ttarj = lista.reduce(function(s,r){ return s+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0); }, 0);
   var ttr   = lista.reduce(function(s,r){ return s+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0); }, 0);
+  var tgastos = lista.reduce(function(s,r){ return s+(r.gastos||0); }, 0);
 
   document.getElementById('an-totals').innerHTML =
     '<div class="tc"><div class="tc-l">Dias</div><div class="tc-v">' + lista.length + '</div></div>' +
