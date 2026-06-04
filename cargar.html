@@ -232,7 +232,7 @@ async function yaExisteRegistro(fecha) {
 
 // LOGIN via Supabase
 async function doLogin() {
-  var user = document.getElementById('l-user').value.trim().toLowerCase();
+  var user = document.getElementById('l-user').value.trim();
   var pass = document.getElementById('l-pass').value.trim();
   if (!user || !pass) { document.getElementById('login-err').style.display = 'block'; return; }
 
