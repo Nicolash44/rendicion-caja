@@ -3,73 +3,60 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rendición de Caja</title>
+<title>Rendición de Caja — Carga</title>
 <style>
   :root {
-    --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #222;
-    --border: #2a2a2a; --border2: #333;
-    --accent: #00e5a0; --accent2: #00b87a;
-    --warn: #f5a623; --danger: #ff4d4d;
-    --text: #e8e8e8; --text2: #888; --text3: #555;
-    --mono: 'Courier New', monospace;
-    --sans: system-ui, sans-serif;
+    --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#222;
+    --border:#2a2a2a;--border2:#333;
+    --accent:#00e5a0;--accent2:#00b87a;
+    --warn:#f5a623;--danger:#ff4d4d;
+    --text:#e8e8e8;--text2:#888;--text3:#555;
+    --mono:'Courier New',monospace;--sans:system-ui,sans-serif;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; padding: 1.5rem 1rem; }
-
-  .container { max-width: 480px; margin: 0 auto; }
-
-  header { margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
-  header h1 { font-family: var(--mono); font-size: 0.95rem; font-weight: 700; color: var(--accent); }
-  header p { font-size: 0.78rem; color: var(--text3); font-family: var(--mono); margin-top: 4px; }
-
-  /* LOGIN */
-  .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-top: 2rem; }
-  .login-box h2 { font-family: var(--mono); font-size: 0.85rem; color: var(--text2); margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: 0.08em; }
-
-  .field { margin-bottom: 1rem; }
-  .field label { font-family: var(--mono); font-size: 0.7rem; color: var(--text3); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
-  .field input, .field select { width: 100%; font-family: var(--mono); font-size: 0.9rem; background: var(--surface2); border: 1px solid var(--border2); color: var(--text); border-radius: 4px; padding: 0.55rem 0.75rem; }
-  .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
-
-  .btn { font-family: var(--mono); font-size: 0.82rem; padding: 0.6rem 1.2rem; border-radius: 4px; border: 1px solid var(--border2); background: transparent; color: var(--text); cursor: pointer; transition: all 0.15s; width: 100%; }
-  .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
-  .btn.primary:hover { background: var(--accent2); }
-  .btn.primary:disabled { background: var(--text3); border-color: var(--text3); color: #666; cursor: not-allowed; }
-
-  .err { background: rgba(255,77,77,0.08); border: 1px solid rgba(255,77,77,0.3); border-radius: 6px; padding: 0.7rem 0.9rem; font-size: 0.82rem; color: var(--danger); margin-top: 0.75rem; display: none; }
-
-  /* FORM */
-  #form-section { display: none; }
-  .user-bar { display: flex; justify-content: space-between; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 0.9rem; margin-bottom: 1.25rem; }
-  .user-bar span { font-family: var(--mono); font-size: 0.8rem; color: var(--text2); }
-  .user-bar strong { color: var(--accent); }
-  .user-bar button { font-family: var(--mono); font-size: 0.75rem; padding: 3px 10px; border: 1px solid var(--border2); border-radius: 4px; background: transparent; color: var(--text3); cursor: pointer; }
-
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
-  .card-title { font-family: var(--mono); font-size: 0.68rem; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.9rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
-
-  .input-row { display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
-  .input-row:last-child { border: none; }
-  .input-row label { font-size: 0.82rem; color: var(--text2); flex: 1; }
-  .input-row input { width: 140px; font-family: var(--mono); font-size: 0.88rem; background: var(--surface2); border: 1px solid var(--border2); color: var(--text); border-radius: 4px; padding: 0.35rem 0.6rem; text-align: right; }
-  .input-row input:focus { outline: none; border-color: var(--accent); }
-  .input-row input.highlight { border-color: var(--accent); }
-  .billete-sub { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); min-width: 80px; text-align: right; padding-left: 0.5rem; }
-  .input-row { gap: 0.5rem; }
-
-  .total-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; margin-top: 0.5rem; border-top: 1px solid var(--border2); }
-  .total-row span { font-family: var(--mono); font-size: 0.85rem; font-weight: 700; }
-  .total-row .val { color: var(--accent); font-size: 1.1rem; }
-
-  .verificacion { border-radius: 6px; padding: 0.75rem 1rem; font-family: var(--mono); font-size: 0.8rem; margin-bottom: 1rem; line-height: 1.6; }
-  .verificacion.ok { background: rgba(0,229,160,0.08); border: 1px solid rgba(0,229,160,0.3); color: var(--accent); }
-  .verificacion.error { background: rgba(255,77,77,0.08); border: 1px solid rgba(255,77,77,0.3); color: var(--danger); }
-
-  #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; padding: 0.55rem 1rem; border-radius: 6px; font-family: var(--mono); font-size: 0.8rem; z-index: 999; opacity: 0; transition: opacity 0.25s; pointer-events: none; }
-
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.2); border-top-color: #000; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;padding:1.5rem 1rem;}
+  .container{max-width:480px;margin:0 auto;}
+  header{margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:1rem;}
+  header h1{font-family:var(--mono);font-size:0.95rem;font-weight:700;color:var(--accent);}
+  header p{font-size:0.78rem;color:var(--text3);font-family:var(--mono);margin-top:4px;}
+  .login-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:2rem;margin-top:1rem;}
+  .login-box h2{font-family:var(--mono);font-size:0.85rem;color:var(--text2);margin-bottom:1.25rem;text-transform:uppercase;letter-spacing:0.08em;}
+  .field{margin-bottom:1rem;}
+  .field label{font-family:var(--mono);font-size:0.7rem;color:var(--text3);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;}
+  .field input{width:100%;font-family:var(--mono);font-size:0.9rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.55rem 0.75rem;}
+  .field input:focus{outline:none;border-color:var(--accent);}
+  .btn{font-family:var(--mono);font-size:0.82rem;padding:0.6rem 1.2rem;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;width:100%;}
+  .btn.primary{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700;}
+  .btn.primary:disabled{background:var(--text3);border-color:var(--text3);color:#666;cursor:not-allowed;}
+  .err-login{background:rgba(255,77,77,0.08);border:1px solid rgba(255,77,77,0.3);border-radius:6px;padding:0.7rem 0.9rem;font-size:0.82rem;color:var(--danger);margin-top:0.75rem;display:none;}
+  .user-bar{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:0.6rem 0.9rem;margin-bottom:1.25rem;}
+  .user-bar span{font-family:var(--mono);font-size:0.8rem;color:var(--text2);}
+  .user-bar strong{color:var(--accent);}
+  .user-bar button{font-family:var(--mono);font-size:0.75rem;padding:3px 10px;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--text3);cursor:pointer;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.1rem 1.25rem;margin-bottom:1rem;}
+  .card-title{font-family:var(--mono);font-size:0.68rem;font-weight:600;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.9rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border);}
+  .input-row{display:flex;justify-content:space-between;align-items:center;padding:0.35rem 0;border-bottom:1px solid rgba(255,255,255,0.03);gap:0.5rem;}
+  .input-row:last-child{border:none;}
+  .input-row label{font-size:0.82rem;color:var(--text2);flex:1;}
+  .input-row input[type=number]{width:130px;font-family:var(--mono);font-size:0.88rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.35rem 0.6rem;text-align:right;}
+  .input-row input[type=number]:focus{outline:none;border-color:var(--accent);}
+  .billete-sub{font-family:var(--mono);font-size:0.78rem;color:var(--accent);min-width:75px;text-align:right;}
+  .total-row{display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;margin-top:0.3rem;border-top:1px solid var(--border2);}
+  .total-row span{font-family:var(--mono);font-size:0.85rem;font-weight:700;}
+  .total-row .val{color:var(--accent);font-size:1rem;}
+  .verif{border-radius:6px;padding:0.75rem 1rem;font-family:var(--mono);font-size:0.8rem;margin-bottom:1rem;line-height:1.6;}
+  .verif.ok{background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);color:var(--accent);}
+  .verif.err{background:rgba(255,77,77,0.08);border:1px solid rgba(255,77,77,0.3);color:var(--danger);}
+  .val-err{font-family:var(--mono);font-size:0.75rem;color:var(--danger);margin-top:0.4rem;display:none;}
+  .err-form{background:rgba(255,77,77,0.08);border:1px solid rgba(255,77,77,0.3);border-radius:6px;padding:0.7rem 0.9rem;font-size:0.82rem;color:var(--danger);margin-top:0.75rem;display:none;}
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,0.2);border-top-color:#000;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #toast{position:fixed;bottom:1.5rem;right:1.5rem;padding:0.55rem 1rem;border-radius:6px;font-family:var(--mono);font-size:0.8rem;z-index:999;opacity:0;transition:opacity 0.25s;pointer-events:none;}
+  textarea{width:100%;font-family:var(--sans);font-size:0.85rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.55rem 0.75rem;resize:vertical;line-height:1.5;}
+  .dif-row{display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.03);}
+  .dif-row:last-child{border:none;}
+  .dif-row label{font-size:0.82rem;color:var(--text2);}
+  .dif-val{font-family:var(--mono);font-size:0.9rem;font-weight:600;}
 </style>
 </head>
 <body>
@@ -93,7 +80,7 @@
         <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
       </div>
       <button class="btn primary" onclick="doLogin()">Entrar</button>
-      <div class="err" id="login-err">Usuario o contraseña incorrectos.</div>
+      <div class="err-login" id="login-err">Usuario o contraseña incorrectos.</div>
     </div>
   </div>
 
@@ -102,50 +89,47 @@
 
     <div class="user-bar">
       <span>Cargando como <strong id="user-name">—</strong></span>
-      <button onclick="logout()">Salir</button>
+      <button onclick="doLogout()">Salir</button>
     </div>
 
+    <!-- FECHA -->
     <div class="card">
       <div class="card-title">Datos del turno</div>
       <div class="input-row">
         <label>Fecha</label>
-        <input type="date" id="f-fecha">
+        <input type="date" id="f-fecha" style="width:160px;font-family:var(--mono);font-size:0.85rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.35rem 0.6rem;">
       </div>
     </div>
 
+    <!-- EFECTIVO -->
     <div class="card">
       <div class="card-title">Efectivo — Billetes</div>
-      <div class="input-row"><label>$ 20.000</label><input type="number" id="b-20000" value="0" min="0" oninput="calcularEfectivo()"> <span class="billete-sub" id="s-20000">$ 0</span></div>
-      <div class="input-row"><label>$ 10.000</label><input type="number" id="b-10000" value="0" min="0" oninput="calcularEfectivo()"> <span class="billete-sub" id="s-10000">$ 0</span></div>
-      <div class="input-row"><label>$ 2.000</label><input type="number" id="b-2000" value="0" min="0" oninput="calcularEfectivo()"> <span class="billete-sub" id="s-2000">$ 0</span></div>
-      <div class="input-row"><label>$ 1.000</label><input type="number" id="b-1000" value="0" min="0" oninput="calcularEfectivo()"> <span class="billete-sub" id="s-1000">$ 0</span></div>
-      <div class="input-row"><label>$ 500</label><input type="number" id="b-500" value="0" min="0" oninput="calcularEfectivo()"> <span class="billete-sub" id="s-500">$ 0</span></div>
-      <div class="input-row"><label>$ 200</label><input type="number" id="b-200" value="0" min="0" oninput="calcularEfectivo()"> <span class="billete-sub" id="s-200">$ 0</span></div>
-      <div class="input-row"><label>$ 100</label><input type="number" id="b-100" value="0" min="0" oninput="calcularEfectivo()"> <span class="billete-sub" id="s-100">$ 0</span></div>
-      <div class="input-row"><label>$ 50</label><input type="number" id="b-50" value="0" min="0" oninput="calcularEfectivo()"> <span class="billete-sub" id="s-50">$ 0</span></div>
-      <div class="input-row"><label>$ 20</label><input type="number" id="b-20" value="0" min="0" oninput="calcularEfectivo()"> <span class="billete-sub" id="s-20">$ 0</span></div>
-      <div class="total-row">
-        <span>Total efectivo</span>
-        <span class="val" id="total-efectivo">$ 0</span>
-      </div>
+      <div class="input-row"><label>$ 20.000</label><input type="number" id="b-20000" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-20000">$ 0</span></div>
+      <div class="input-row"><label>$ 10.000</label><input type="number" id="b-10000" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-10000">$ 0</span></div>
+      <div class="input-row"><label>$ 2.000</label><input type="number" id="b-2000" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-2000">$ 0</span></div>
+      <div class="input-row"><label>$ 1.000</label><input type="number" id="b-1000" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-1000">$ 0</span></div>
+      <div class="input-row"><label>$ 500</label><input type="number" id="b-500" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-500">$ 0</span></div>
+      <div class="input-row"><label>$ 200</label><input type="number" id="b-200" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-200">$ 0</span></div>
+      <div class="input-row"><label>$ 100</label><input type="number" id="b-100" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-100">$ 0</span></div>
+      <div class="input-row"><label>$ 50</label><input type="number" id="b-50" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-50">$ 0</span></div>
+      <div class="input-row"><label>$ 20</label><input type="number" id="b-20" value="0" min="0" oninput="calcularEfectivo()"><span class="billete-sub" id="s-20">$ 0</span></div>
+      <div class="total-row"><span>Total efectivo</span><span class="val" id="total-efectivo">$ 0</span></div>
     </div>
 
-    <div class="card" id="card-gastos">
-      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+    <!-- GASTOS -->
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
         Gastos <span style="font-size:0.7rem;color:var(--text3)">(se suman al efectivo)</span>
-        <button onclick="agregarGasto()" style="font-family:var(--mono);font-size:0.72rem;padding:2px 10px;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer">+ Agregar</button>
+        <button onclick="agregarGasto()" style="font-family:var(--mono);font-size:0.72rem;padding:2px 10px;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer;">+ Agregar</button>
       </div>
       <div id="lista-gastos"></div>
-      <div class="total-row">
-        <span>Total gastos</span>
-        <span style="font-family:var(--mono);font-size:0.95rem;color:var(--danger)" id="total-gastos">$ 0</span>
-      </div>
-      <div class="total-row" id="row-efec-neto" style="display:none;border-top:1px solid var(--border2);margin-top:4px;padding-top:8px">
-        <span>Efectivo total (con gastos)</span>
-        <span class="val" id="efec-neto">$ 0</span>
+      <div class="total-row"><span>Total gastos</span><span style="font-family:var(--mono);font-size:0.95rem;color:var(--warn)" id="total-gastos">$ 0</span></div>
+      <div class="total-row" id="row-efec-total" style="display:none;border-top:1px solid var(--border2);margin-top:4px;padding-top:8px;">
+        <span>Efectivo total (con gastos)</span><span class="val" id="efec-con-gastos">$ 0</span>
       </div>
     </div>
 
+    <!-- TARJETAS -->
     <div class="card">
       <div class="card-title">Tarjetas</div>
       <div class="input-row"><label>Visa Crédito</label><input type="number" id="f-visa-cred" value="0" min="0" oninput="calcular()"></div>
@@ -156,68 +140,52 @@
       <div class="input-row"><label>Naranja</label><input type="number" id="f-naranja" value="0" min="0" oninput="calcular()"></div>
     </div>
 
+    <!-- OTROS MEDIOS -->
     <div class="card">
       <div class="card-title">Otros medios</div>
       <div class="input-row"><label>Transferencias</label><input type="number" id="f-transf" value="0" min="0" oninput="calcular()"></div>
       <div class="input-row"><label>OR Payway</label><input type="number" id="f-or" value="0" min="0" oninput="calcular()"></div>
       <div class="input-row"><label>Cuenta DNI</label><input type="number" id="f-cdni" value="0" min="0" oninput="calcular()"></div>
     </div>
-<div class="total-row">
-        <span>Suma calculada</span>
-        <span class="val" id="suma-calc">$ 0</span>
-      </div>
-    </div>
-
-    <div class="verificacion" id="verif" style="display:none"></div>
 
     <!-- TURNO SISTEMA -->
     <div class="card">
       <div class="card-title">Turno sistema</div>
       <div class="input-row">
-        <label>Nota de credito (NC) <span style="font-size:0.7rem;color:var(--text3)">menor o igual a 0</span></label>
-        <input type="number" id="ts-nc" value="0" oninput="validarTS();calcularDiferenciaFull()" style="width:140px;font-family:var(--mono);font-size:0.88rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.35rem 0.6rem;text-align:right">
+        <label>Nota de crédito (NC) <span style="font-size:0.7rem;color:var(--text3)">≤ 0</span></label>
+        <input type="number" id="ts-nc" value="0" oninput="validarTS();calcular()">
       </div>
       <div class="input-row">
-        <label>Cierre Z (FC) <span style="font-size:0.7rem;color:var(--text3)">mayor a 0</span></label>
-        <input type="number" id="ts-cz" value="0" oninput="validarTS();calcularDiferenciaFull()" style="width:140px;font-family:var(--mono);font-size:0.88rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.35rem 0.6rem;text-align:right">
+        <label>Cierre Z (FC) <span style="font-size:0.7rem;color:var(--text3)">&gt; 0</span></label>
+        <input type="number" id="ts-cz" value="0" oninput="validarTS();calcular()">
       </div>
       <div class="input-row">
-        <label>PR <span style="font-size:0.7rem;color:var(--text3)">mayor o igual a 0</span></label>
-        <input type="number" id="ts-pr" value="0" oninput="validarTS();calcularDiferenciaFull()" style="width:140px;font-family:var(--mono);font-size:0.88rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.35rem 0.6rem;text-align:right">
+        <label>PR <span style="font-size:0.7rem;color:var(--text3)">≥ 0</span></label>
+        <input type="number" id="ts-pr" value="0" oninput="validarTS();calcular()">
       </div>
-      <div class="total-row">
-        <span>Venta total turno</span>
-        <span class="val" id="ts-total">$ 0</span>
-      </div>
-      <div id="ts-errors" style="font-family:var(--mono);font-size:0.75rem;color:var(--danger);margin-top:0.4rem;display:none"></div>
+      <div class="total-row"><span>Venta total turno</span><span class="val" id="ts-total">$ 0</span></div>
+      <div class="val-err" id="ts-errors"></div>
     </div>
 
-    <div class="card" id="card-diferencia">
+    <!-- DIFERENCIA -->
+    <div class="card">
       <div class="card-title">Diferencia</div>
-      <div class="input-row">
-        <label>Total turno (sistema)</label>
-        <span style="font-family:var(--mono);font-size:0.9rem;font-weight:600;color:var(--text)" id="dif-turno">$ 0</span>
-      </div>
-      <div class="input-row">
-        <label>Total real (cobrado)</label>
-        <span style="font-family:var(--mono);font-size:0.9rem;font-weight:600;color:var(--accent)" id="dif-real">$ 0</span>
-      </div>
-      <div class="total-row" style="border-top:1px solid var(--border2);margin-top:0.4rem;padding-top:0.6rem">
+      <div class="dif-row"><label>Total turno (sistema)</label><span class="dif-val" id="dif-turno">$ 0</span></div>
+      <div class="dif-row"><label>Total real (cobrado)</label><span class="dif-val" style="color:var(--accent)" id="dif-real">$ 0</span></div>
+      <div class="total-row" style="border-top:1px solid var(--border2);margin-top:0.4rem;padding-top:0.6rem;">
         <span style="font-weight:600">Diferencia</span>
-        <span style="font-family:var(--mono);font-size:1.1rem;font-weight:700" id="dif-result">$ 0</span>
+        <span style="font-family:var(--mono);font-size:1.1rem;font-weight:700;" id="dif-result">$ 0</span>
       </div>
     </div>
 
-
-
+    <!-- OBSERVACIONES -->
     <div class="card">
       <div class="card-title">Observaciones</div>
-      <textarea id="f-obs" placeholder="Anotá cualquier novedad del turno..." rows="3"
-        style="width:100%;font-family:var(--sans);font-size:0.85rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.55rem 0.75rem;resize:vertical;line-height:1.5"></textarea>
+      <textarea id="f-obs" rows="3" placeholder="Anotá cualquier novedad del turno..."></textarea>
     </div>
 
     <button class="btn primary" id="btn-guardar" onclick="guardar()">Guardar rendición</button>
-    <div class="err" id="form-err" style="margin-top:0.75rem"></div>
+    <div class="err-form" id="form-err"></div>
 
   </div>
 </div>
@@ -225,16 +193,19 @@
 <div id="toast"></div>
 
 <script>
-// ══ USUARIOS ═════════════════════════════════════════════════════
-const USUARIOS = {
-  'sofia':  { pass: 'sofi1032',  nombre: 'SOFIA',  numero: '1032', admin: false },
-  'malena': { pass: 'male1362',  nombre: 'MALENA', numero: '1362', admin: false },
-  'agus':   { pass: 'agus1234',  nombre: 'AGUS',   numero: '0000', admin: true  },
+var USUARIOS = {
+  sofia:  { pass: 'sofi1032', nombre: 'SOFIA',  admin: false },
+  malena: { pass: 'male1362', nombre: 'MALENA', admin: false },
+  agus:   { pass: 'agus1234', nombre: 'AGUS',   admin: true  }
 };
 
-// ══ SUPABASE ═════════════════════════════════════════════════════
-const SUPA_URL = 'https://dihhccmimdzcfsjcobgs.supabase.co';
-const SUPA_KEY = 'sb_publishable_Sf68jNa72m3UJcsl014Vhg_sFp_BYqD';
+var SUPA_URL = 'https://dihhccmimdzcfsjcobgs.supabase.co';
+var SUPA_KEY = 'sb_publishable_Sf68jNa72m3UJcsl014Vhg_sFp_BYqD';
+
+var BILLETES = [20000, 10000, 2000, 1000, 500, 200, 100, 50, 20];
+var gastoItems = [];
+var gastoId = 0;
+var usuarioActual = null;
 
 function supaHdrs() {
   return {
@@ -247,16 +218,23 @@ function supaHdrs() {
 
 async function supaGuardar(row) {
   try {
-    const r = await fetch(SUPA_URL + '/rest/v1/rendiciones', {
+    var r = await fetch(SUPA_URL + '/rest/v1/rendiciones', {
       method: 'POST', headers: supaHdrs(), body: JSON.stringify(row)
     });
     return r.ok;
   } catch(e) { return false; }
 }
 
-// ══ SESION ═══════════════════════════════════════════════════════
-let usuarioActual = null;
+async function yaExisteRegistro(fecha) {
+  try {
+    var r = await fetch(SUPA_URL + '/rest/v1/rendiciones?fecha=eq.' + encodeURIComponent(fecha) + '&select=_id', { headers: supaHdrs() });
+    if (!r.ok) return false;
+    var data = await r.json();
+    return data.length > 0;
+  } catch(e) { return false; }
+}
 
+// LOGIN
 function doLogin() {
   var user = document.getElementById('l-user').value.trim().toLowerCase();
   var pass = document.getElementById('l-pass').value.trim();
@@ -266,7 +244,7 @@ function doLogin() {
     return;
   }
   if (u.admin) {
-    sessionStorage.setItem('rdcaja_admin', JSON.stringify({user:user, nombre:u.nombre, admin:true}));
+    sessionStorage.setItem('rdcaja_admin', JSON.stringify({ user: user, nombre: u.nombre, admin: true }));
     window.location.href = 'index.html';
     return;
   }
@@ -275,10 +253,9 @@ function doLogin() {
   mostrarForm();
 }
 
-function logout() {
+function doLogout() {
   sessionStorage.removeItem('rdcaja_user');
   sessionStorage.removeItem('rdcaja_admin');
-  usuarioActual = null;
   window.location.href = 'index.html';
 }
 
@@ -286,45 +263,110 @@ function mostrarForm() {
   document.getElementById('login-section').style.display = 'none';
   document.getElementById('form-section').style.display = 'block';
   document.getElementById('user-name').textContent = usuarioActual.nombre;
-  // Fecha de hoy por defecto
-  const hoy = new Date();
+  var hoy = new Date();
   document.getElementById('f-fecha').value = hoy.toISOString().split('T')[0];
   renderGastos();
   calcular();
 }
 
-// ══ CALCULAR ═════════════════════════════════════════════════════
-function v(id) { return parseFloat(document.getElementById(id).value) || 0; }
-function money(n) { return '$ ' + Number(n).toLocaleString('es-AR'); }
-
-const BILLETES = [20000, 10000, 2000, 1000, 500, 200, 100, 50, 20];
-
-var tsErrors = [];
-
-function validarTS() {
-  var nc = parseFloat(document.getElementById('ts-nc').value) || 0;
-  var cz = parseFloat(document.getElementById('ts-cz').value) || 0;
-  var pr = parseFloat(document.getElementById('ts-pr').value) || 0;
-  var errors = [];
-  if (nc > 0) errors.push('NC debe ser 0 o menor a 0');
-  if (cz <= 0 && cz !== 0) errors.push('Cierre Z debe ser mayor a 0');
-  if (pr < 0) errors.push('PR debe ser 0 o mayor a 0');
-  var errEl = document.getElementById('ts-errors');
-  if (errors.length) {
-    errEl.textContent = errors.join(' · ');
-    errEl.style.display = 'block';
-  } else {
-    errEl.style.display = 'none';
-  }
-  var totalTS = nc + cz + pr;
-  document.getElementById('ts-total').textContent = money(totalTS);
-  return errors.length === 0;
+// GASTOS
+function agregarGasto() {
+  var id = ++gastoId;
+  gastoItems.push({ id: id, desc: '', monto: 0 });
+  renderGastos();
 }
 
-function calcularDiferencia(totalReal) {
-  var nc = parseFloat(document.getElementById('ts-nc').value) || 0;
-  var cz = parseFloat(document.getElementById('ts-cz').value) || 0;
-  var pr = parseFloat(document.getElementById('ts-pr').value) || 0;
+function eliminarGasto(id) {
+  gastoItems = gastoItems.filter(function(g) { return g.id !== id; });
+  renderGastos();
+  calcular();
+}
+
+function renderGastos() {
+  var lista = document.getElementById('lista-gastos');
+  if (!gastoItems.length) {
+    lista.innerHTML = '<div style="font-family:var(--mono);font-size:0.78rem;color:var(--text3);padding:0.4rem 0">Sin gastos cargados.</div>';
+    return;
+  }
+  var html = '';
+  gastoItems.forEach(function(g) {
+    html += '<div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center">' +
+      '<input type="text" placeholder="Descripcion" value="' + (g.desc||'') + '" ' +
+      'onchange="gastoItems.find(function(x){return x.id==' + g.id + ';}).desc=this.value" ' +
+      'style="flex:1;font-family:var(--sans);font-size:0.82rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.38rem 0.6rem;">' +
+      '<input type="number" placeholder="0" value="' + (g.monto||0) + '" ' +
+      'oninput="gastoItems.find(function(x){return x.id==' + g.id + ';}).monto=parseFloat(this.value)||0;calcular()" ' +
+      'style="width:110px;font-family:var(--mono);font-size:0.85rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.38rem 0.6rem;text-align:right;">' +
+      '<button onclick="eliminarGasto(' + g.id + ')" style="font-family:var(--mono);font-size:0.75rem;padding:4px 8px;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--danger);cursor:pointer;">x</button>' +
+      '</div>';
+  });
+  lista.innerHTML = html;
+}
+
+function totalGastos() {
+  return gastoItems.reduce(function(s, g) { return s + (g.monto || 0); }, 0);
+}
+
+function v(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+function money(n) {
+  if (!n && n !== 0) return '—';
+  return '$ ' + Number(n).toLocaleString('es-AR');
+}
+
+function calcularEfectivo() {
+  var total = 0;
+  BILLETES.forEach(function(b) {
+    var cant = parseInt(document.getElementById('b-' + b).value) || 0;
+    var sub = cant * b;
+    document.getElementById('s-' + b).textContent = sub > 0 ? money(sub) : '$ 0';
+    total += sub;
+  });
+  document.getElementById('total-efectivo').textContent = money(total);
+  calcular();
+}
+
+function validarTS() {
+  var nc = v('ts-nc');
+  var cz = v('ts-cz');
+  var pr = v('ts-pr');
+  var errors = [];
+  if (nc > 0) errors.push('NC debe ser 0 o menor');
+  if (cz < 0) errors.push('Cierre Z debe ser mayor a 0');
+  if (pr < 0) errors.push('PR debe ser 0 o mayor');
+  var el = document.getElementById('ts-errors');
+  if (errors.length) {
+    el.textContent = errors.join(' · ');
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function calcular() {
+  var totalEfectivo = BILLETES.reduce(function(s, b) {
+    return s + (parseInt(document.getElementById('b-' + b).value) || 0) * b;
+  }, 0);
+  var gastos = totalGastos();
+  var efectivoTotal = totalEfectivo + gastos;
+
+  document.getElementById('total-gastos').textContent = money(gastos);
+  var rowEfec = document.getElementById('row-efec-total');
+  if (gastos > 0) {
+    rowEfec.style.display = 'flex';
+    document.getElementById('efec-con-gastos').textContent = money(efectivoTotal);
+  } else {
+    rowEfec.style.display = 'none';
+  }
+
+  var totalReal = efectivoTotal +
+    v('f-visa-cred') + v('f-visa-deb') + v('f-amex') +
+    v('f-mastercard') + v('f-maestro') + v('f-naranja') +
+    v('f-transf') + v('f-or') + v('f-cdni');
+
+  var nc = v('ts-nc');
+  var cz = v('ts-cz');
+  var pr = v('ts-pr');
   var totalTurno = nc + cz + pr;
   document.getElementById('ts-total').textContent = money(totalTurno);
   document.getElementById('dif-turno').textContent = money(totalTurno);
@@ -335,124 +377,11 @@ function calcularDiferencia(totalReal) {
   difEl.style.color = Math.abs(dif) < 10 ? 'var(--accent)' : 'var(--danger)';
 }
 
-function calcularDiferenciaFull() {
-  var totalEfectivo = BILLETES.reduce(function(s,b) {
-    return s + (parseInt(document.getElementById('b-'+b).value)||0)*b;
-  }, 0);
-  var gastos = totalGastos();
-  var totalReal = totalEfectivo + gastos + v('f-visa-cred') + v('f-visa-deb') +
-    v('f-amex') + v('f-mastercard') + v('f-maestro') + v('f-naranja') +
-    v('f-transf') + v('f-or') + v('f-cdni');
-  calcularDiferencia(totalReal);
-}
-
-let gastoItems = [];
-let gastoId = 0;
-
-function agregarGasto() {
-  const id = ++gastoId;
-  gastoItems.push({ id, desc: '', monto: 0 });
-  renderGastos();
-}
-
-function eliminarGasto(id) {
-  gastoItems = gastoItems.filter(g => g.id !== id);
-  renderGastos();
-  calcular();
-}
-
-function renderGastos() {
-  const lista = document.getElementById('lista-gastos');
-  if (!gastoItems.length) {
-    lista.innerHTML = '<div style="font-family:var(--mono);font-size:0.78rem;color:var(--text3);padding:0.4rem 0">Sin gastos cargados.</div>';
-    return;
-  }
-  lista.innerHTML = gastoItems.map(g => `
-    <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center">
-      <input type="text" placeholder="Descripción" value="${g.desc}"
-        onchange="gastoItems.find(x=>x.id==${g.id}).desc=this.value"
-        style="flex:1;font-family:var(--sans);font-size:0.82rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.38rem 0.6rem">
-      <input type="number" placeholder="$ 0" value="${g.monto||''}"
-        oninput="gastoItems.find(x=>x.id==${g.id}).monto=parseFloat(this.value)||0;calcular()"
-        style="width:110px;font-family:var(--mono);font-size:0.85rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.38rem 0.6rem;text-align:right">
-      <button onclick="eliminarGasto(${g.id})" style="font-family:var(--mono);font-size:0.75rem;padding:4px 8px;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--danger);cursor:pointer">✕</button>
-    </div>
-  `).join('');
-}
-
-function totalGastos() {
-  return gastoItems.reduce((s,g) => s+(g.monto||0), 0);
-}
-
-function calcularEfectivo() {
-  let total = 0;
-  BILLETES.forEach(b => {
-    const cant = parseInt(document.getElementById('b-'+b).value) || 0;
-    const sub = cant * b;
-    document.getElementById('s-'+b).textContent = sub > 0 ? money(sub) : '$ 0';
-    total += sub;
-  });
-  document.getElementById('total-efectivo').textContent = money(total);
-  calcular();
-}
-
-function calcular() {
-  var totalEfectivo = BILLETES.reduce(function(s,b) {
-    return s + (parseInt(document.getElementById('b-'+b).value)||0)*b;
-  }, 0);
-  var gastos = totalGastos();
-  var efectivoTotal = totalEfectivo + gastos;
-  document.getElementById('total-gastos').textContent = money(gastos);
-  var rowNeto = document.getElementById('row-efec-neto');
-  if (gastos > 0) {
-    rowNeto.style.display = 'flex';
-    document.getElementById('efec-neto').textContent = money(efectivoTotal);
-  } else {
-    rowNeto.style.display = 'none';
-  }
-  var totalReal = efectivoTotal + v('f-visa-cred') + v('f-visa-deb') +
-    v('f-amex') + v('f-mastercard') + v('f-maestro') + v('f-naranja') +
-    v('f-transf') + v('f-or') + v('f-cdni');
-  document.getElementById('suma-calc').textContent = money(totalReal);
-  calcularDiferencia(totalReal);
-
-  const total = v('f-total');
-  const verif = document.getElementById('verif');
-  if (total > 0) {
-    const dif = suma - total;
-    verif.style.display = 'block';
-    if (Math.abs(dif) < 10) {
-      verif.className = 'verificacion ok';
-      verif.textContent = '✓ Los valores cuadran (' + money(suma) + ')';
-    } else {
-      verif.className = 'verificacion error';
-      verif.textContent = '⚠ Diferencia: ' + money(Math.abs(dif)) + (dif > 0 ? ' (sobra)' : ' (falta)') +
-        ' — Suma: ' + money(suma) + ' / Total: ' + money(total);
-    }
-  } else {
-    verif.style.display = 'none';
-  }
-}
-
-// ══ GUARDAR ══════════════════════════════════════════════════════
-async function yaExisteRegistro(fecha) {
-  try {
-    const r = await fetch(
-      `${SUPA_URL}/rest/v1/rendiciones?fecha=eq.${encodeURIComponent(fecha)}&select=_id`,
-      { headers: supaHdrs() }
-    );
-    if (!r.ok) return false;
-    const data = await r.json();
-    return data.length > 0;
-  } catch(e) { return false; }
-}
-
 async function guardar() {
   var fechaRaw = document.getElementById('f-fecha').value;
   if (!fechaRaw) { showErr('Completa la fecha.'); return; }
-
-  var parts = fechaRaw.split('-');
-  var fecha = parts[2] + '/' + parts[1] + '/' + parts[0];
+  var pts = fechaRaw.split('-');
+  var fecha = pts[2] + '/' + pts[1] + '/' + pts[0];
 
   var btn = document.getElementById('btn-guardar');
   btn.disabled = true;
@@ -462,98 +391,107 @@ async function guardar() {
   if (existe) {
     btn.disabled = false;
     btn.textContent = 'Guardar rendicion';
-    showErr('Ya existe una rendicion cargada para el ' + fecha + '. Solo se permite una por dia.');
+    showErr('Ya existe una rendicion para el ' + fecha + '. Solo se permite una por dia.');
     return;
   }
 
   btn.innerHTML = '<span class="spinner"></span>Guardando...';
 
-  var totalEfectivo = BILLETES.reduce(function(s,b) {
-    return s + (parseInt(document.getElementById('b-'+b).value)||0)*b;
+  var totalEfectivo = BILLETES.reduce(function(s, b) {
+    return s + (parseInt(document.getElementById('b-' + b).value) || 0) * b;
   }, 0);
   var gastos = totalGastos();
-  var efectivoNeto = totalEfectivo - gastos;
+  var efectivoTotal = totalEfectivo + gastos;
 
   var billeteDetalle = BILLETES.map(function(b) {
-    var cant = parseInt(document.getElementById('b-'+b).value)||0;
-    return { denominacion: b, cantidad: cant, subtotal: cant*b };
-  }).filter(function(b){ return b.cantidad > 0; });
+    var cant = parseInt(document.getElementById('b-' + b).value) || 0;
+    return { denominacion: b, cantidad: cant, subtotal: cant * b };
+  }).filter(function(x) { return x.cantidad > 0; });
 
-  var vn = function(id){ return parseFloat(document.getElementById(id).value)||0; };
+  var totalReal = efectivoTotal +
+    v('f-visa-cred') + v('f-visa-deb') + v('f-amex') +
+    v('f-mastercard') + v('f-maestro') + v('f-naranja') +
+    v('f-transf') + v('f-or') + v('f-cdni');
 
   var row = {
     _id: Date.now(),
     _guardado: new Date().toISOString(),
     fecha: fecha,
     cajera: usuarioActual.nombre,
-    efectivo_total: efectivoNeto,
+    efectivo_total: efectivoTotal,
     efectivo_bruto: totalEfectivo,
     gastos: gastos,
-    gastos_desc: gastoItems.filter(function(g){return g.monto>0;}).map(function(g){return (g.desc||'sin desc')+': $'+g.monto;}).join(' | ')||null,
+    gastos_desc: gastoItems.filter(function(g) { return g.monto > 0; }).map(function(g) { return (g.desc || 'sin desc') + ': $' + g.monto; }).join(' | ') || null,
     billetes: JSON.stringify(billeteDetalle),
-    visa_credito:   vn('f-visa-cred'),
-    visa_debito:    vn('f-visa-deb'),
-    amex:           vn('f-amex'),
-    mastercard:     vn('f-mastercard'),
-    maestro:        vn('f-maestro'),
-    naranja:        vn('f-naranja'),
-    transferencias: vn('f-transf'),
-    or_patagway:    vn('f-or'),
-    cuenta_dni:     vn('f-cdni'),
-    total_general:  totalEfectivo + gastos + vn('f-visa-cred') + vn('f-visa-deb') + vn('f-amex') + vn('f-mastercard') + vn('f-maestro') + vn('f-naranja') + vn('f-transf') + vn('f-or') + vn('f-cdni'),
-    observaciones:  document.getElementById('f-obs').value.trim()||null,
-    ts_nc: parseFloat(document.getElementById('ts-nc').value)||0,
-    ts_cz: parseFloat(document.getElementById('ts-cz').value)||0,
-    ts_pr: parseFloat(document.getElementById('ts-pr').value)||0,
-    ts_venta_total: (parseFloat(document.getElementById('ts-nc').value)||0)+(parseFloat(document.getElementById('ts-cz').value)||0)+(parseFloat(document.getElementById('ts-pr').value)||0),
+    visa_credito: v('f-visa-cred'),
+    visa_debito: v('f-visa-deb'),
+    amex: v('f-amex'),
+    mastercard: v('f-mastercard'),
+    maestro: v('f-maestro'),
+    naranja: v('f-naranja'),
+    transferencias: v('f-transf'),
+    or_patagway: v('f-or'),
+    cuenta_dni: v('f-cdni'),
+    total_general: totalReal,
+    observaciones: document.getElementById('f-obs').value.trim() || null,
+    ts_nc: v('ts-nc'),
+    ts_cz: v('ts-cz'),
+    ts_pr: v('ts-pr'),
+    ts_venta_total: v('ts-nc') + v('ts-cz') + v('ts-pr')
   };
 
   var ok = await supaGuardar(row);
-
   btn.disabled = false;
   btn.textContent = 'Guardar rendicion';
 
   if (ok) {
     toast('Rendicion guardada ✓', 'ok');
-    BILLETES.forEach(function(b){ document.getElementById('b-'+b).value = 0; document.getElementById('s-'+b).textContent = '$ 0'; });
-    ['f-visa-cred','f-visa-deb','f-amex','f-mastercard','f-maestro','f-naranja','f-transf','f-or','f-cdni'].forEach(function(id){ document.getElementById(id).value = 0; });
+    BILLETES.forEach(function(b) {
+      document.getElementById('b-' + b).value = 0;
+      document.getElementById('s-' + b).textContent = '$ 0';
+    });
+    ['f-visa-cred','f-visa-deb','f-amex','f-mastercard','f-maestro','f-naranja','f-transf','f-or','f-cdni'].forEach(function(id) {
+      document.getElementById(id).value = 0;
+    });
+    ['ts-nc','ts-cz','ts-pr'].forEach(function(id) {
+      document.getElementById(id).value = 0;
+    });
     gastoItems = []; gastoId = 0; renderGastos();
     document.getElementById('f-obs').value = '';
-    ['ts-nc','ts-cz','ts-pr'].forEach(function(id){ document.getElementById(id).value = 0; });
-    document.getElementById('ts-total').textContent = '$ 0';
-    calcularDiferenciaFull();
     document.getElementById('total-efectivo').textContent = '$ 0';
-    document.getElementById('row-efec-neto').style.display = 'none';
-    document.getElementById('verif').style.display = 'none';
+    document.getElementById('total-gastos').textContent = '$ 0';
+    document.getElementById('row-efec-total').style.display = 'none';
+    document.getElementById('ts-total').textContent = '$ 0';
+    document.getElementById('ts-errors').style.display = 'none';
     document.getElementById('form-err').style.display = 'none';
     calcular();
   } else {
     showErr('Error al guardar. Verifica la conexion e intenta de nuevo.');
   }
 }
+
 function showErr(msg) {
-  const el = document.getElementById('form-err');
+  var el = document.getElementById('form-err');
   el.textContent = msg;
   el.style.display = 'block';
 }
 
 function toast(msg, tipo) {
-  const el = document.getElementById('toast');
+  var el = document.getElementById('toast');
   el.textContent = msg;
   el.style.color = '#000';
   el.style.background = tipo === 'ok' ? '#00b87a' : tipo === 'warn' ? '#f5a623' : '#ff4d4d';
   el.style.opacity = '1';
   clearTimeout(el._t);
-  el._t = setTimeout(() => el.style.opacity = '0', 3000);
+  el._t = setTimeout(function() { el.style.opacity = '0'; }, 3000);
 }
 
-// ══ INIT ═════════════════════════════════════════════════════════
+// INIT
 (function() {
   document.getElementById('l-pass').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') doLogin();
   });
 
-  // Verificar si viene del index con sesión
   var adminSesion = sessionStorage.getItem('rdcaja_admin');
   if (adminSesion) {
     var u = JSON.parse(adminSesion);
@@ -564,14 +502,12 @@ function toast(msg, tipo) {
       return;
     }
   }
-  // Verificar sesión propia
   var saved = sessionStorage.getItem('rdcaja_user');
   if (saved) {
     usuarioActual = JSON.parse(saved);
     mostrarForm();
     return;
   }
-  // Sin sesión: mostrar login
   document.getElementById('login-section').style.display = 'block';
 })();
 </script>
