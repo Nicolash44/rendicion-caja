@@ -183,8 +183,8 @@ function doLogout() {
 </div>
 
 <header>
-  <h1>RENDICIÓN DE CAJA</h1>
-  <span>v4.0 · Supabase sync</span>
+  <h1>RENDICIÓN DE CAJA / SCANNER IA</h1>
+  <span>v3.0 · Supabase sync</span>
   <span id="user-badge" style="margin-left:auto;font-size:0.72rem;color:var(--text3);cursor:pointer" onclick="doLogout()">— Salir</span>
 </header>
 
@@ -726,6 +726,7 @@ async function renderHistorial() {
   const ttarj = lista.reduce((s,r)=>s+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0),0);
   const ttr  = lista.reduce((s,r)=>s+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0),0);
   const ttg  = lista.reduce((s,r)=>s+(r.total_general||0),0);
+  const tgastos = lista.reduce((s,r)=>s+(r.gastos||0),0);
   const ndif = lista.filter(r=>{ const sm=(r.efectivo_total||0)+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0)+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0); return Math.abs(sm-(r.total_general||0))>=10; }).length;
   document.getElementById('totals-grid').innerHTML =
     '<div class="tc"><div class="tc-l">Registros</div><div class="tc-v">' + lista.length + '</div></div>' +
