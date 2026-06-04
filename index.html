@@ -128,14 +128,19 @@ async function doLogin() {
   if (!user || !pass) { document.getElementById('l-err').style.display='block'; return; }
   var hash = md5(pass);
   try {
-    var r = await fetch(SUPA_URL_AUTH + '/rest/v1/usuarios?usuario=eq.' + encodeURIComponent(user) + '&password_hash=eq.' + encodeURIComponent(hash) + '&select=nombre,admin', {
+    var r = await fetch(SUPA_URL_AUTH + '/rest/v1/usuarios?usuario=eq.' + encodeURIComponent(user) + '&password_hash=eq.' + encodeURIComponent(hash) + '&select=nombre,admin,rol', {
       headers: { 'apikey': SUPA_KEY_AUTH, 'Authorization': 'Bearer ' + SUPA_KEY_AUTH }
     });
     var data = await r.json();
     if (!data || !data.length) { document.getElementById('l-err').style.display='block'; return; }
     var u = data[0];
-    sessionStorage.setItem('rdcaja_admin', JSON.stringify({user:user, nombre:u.nombre, admin:u.admin}));
-    if (!u.admin) {
+    sessionStorage.setItem('rdcaja_admin', JSON.stringify({user:user, nombre:u.nombre, admin:u.admin, rol:u.rol||'cajera'}));
+    var rol = (u.rol||'').trim();
+    if (rol === 'readonly') {
+      document.getElementById('login-overlay').style.display = 'none';
+      document.getElementById('user-badge').textContent = u.nombre + ' · Salir';
+      mostrarSoloLectura();
+    } else if (rol !== 'admin' && !u.admin) {
       window.location.href = 'cargar.html';
     } else {
       document.getElementById('login-overlay').style.display = 'none';
@@ -486,6 +491,20 @@ async function addHistory(d) {
 }
 
 // ══ TABS ═════════════════════════════════════════════════════════
+function mostrarSoloLectura() {
+  // Ocultar tabs de scanner y config, solo mostrar historial y analisis
+  var tabs = document.querySelectorAll('.tab-nav button');
+  tabs.forEach(function(btn) {
+    var txt = btn.textContent.toLowerCase();
+    if (txt.includes('escan') || txt.includes('config')) {
+      btn.style.display = 'none';
+    }
+  });
+  // Ocultar botones de editar y borrar en historial
+  document.body.classList.add('readonly-mode');
+  showTab('historial');
+}
+
 function showTab(t) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-nav button').forEach(el => el.classList.remove('active'));
