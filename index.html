@@ -348,6 +348,11 @@ create policy "acceso anonimo" on rendiciones
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.6rem;margin-bottom:1.25rem" id="an-totals"></div>
 
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">Total real por fecha</div>
+      <div id="an-chart" style="width:100%;min-height:60px"></div>
+    </div>
+
     <div class="card">
       <div class="card-title">Detalle por fecha</div>
       <div style="overflow-x:auto">
@@ -1083,8 +1088,8 @@ function resetAnalisis() {
 }
 
 async function renderAnalisis() {
-  const cfg = getCfg();
-  let lista;
+  var cfg = getCfg();
+  var lista;
   if (cfg.url && cfg.key) {
     var remote = await supaCargar();
     lista = remote !== null ? remote : getLocal();
@@ -1111,10 +1116,10 @@ async function renderAnalisis() {
   if (cajera) lista = lista.filter(function(r){ return r.cajera === cajera; });
   lista.sort(function(a,b){ return fechaSort(a.fecha) < fechaSort(b.fecha) ? -1 : 1; });
 
-  var ttg  = lista.reduce(function(s,r){ return s+(r.total_general||0); }, 0);
-  var te   = lista.reduce(function(s,r){ return s+(r.efectivo_total||0); }, 0);
+  var ttg   = lista.reduce(function(s,r){ return s+(r.total_general||0); }, 0);
+  var te    = lista.reduce(function(s,r){ return s+(r.efectivo_total||0); }, 0);
   var ttarj = lista.reduce(function(s,r){ return s+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0); }, 0);
-  var ttr  = lista.reduce(function(s,r){ return s+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0); }, 0);
+  var ttr   = lista.reduce(function(s,r){ return s+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0); }, 0);
 
   document.getElementById('an-totals').innerHTML =
     '<div class="tc"><div class="tc-l">Dias</div><div class="tc-v">' + lista.length + '</div></div>' +
@@ -1124,16 +1129,73 @@ async function renderAnalisis() {
     '<div class="tc"><div class="tc-l">Tarjetas</div><div class="tc-v">' + money(ttarj) + '</div></div>' +
     '<div class="tc"><div class="tc-l">Transfer+QR</div><div class="tc-v">' + money(ttr) + '</div></div>';
 
-  var tbody = document.getElementById('an-body');
-  var empty = document.getElementById('an-empty');
-  tbody.innerHTML = '';
+  // Gráfico SVG
+  var chartEl = document.getElementById('an-chart');
   if (!lista.length) {
-    empty.style.display = 'block';
+    chartEl.innerHTML = '<p style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:0.82rem;padding:2rem">Sin datos para el periodo seleccionado.</p>';
     document.getElementById('an-table').style.display = 'none';
+    document.getElementById('an-empty').style.display = 'block';
     return;
   }
-  empty.style.display = 'none';
+  document.getElementById('an-empty').style.display = 'none';
   document.getElementById('an-table').style.display = 'table';
+
+  // Dibujar gráfico SVG
+  var W = chartEl.clientWidth || 600;
+  var H = 220;
+  var padL = 70, padR = 20, padT = 20, padB = 50;
+  var valores = lista.map(function(r){ return r.total_general||0; });
+  var maxVal = Math.max.apply(null, valores) || 1;
+  var minVal = Math.min.apply(null, valores);
+  var rango = maxVal - minVal || maxVal;
+  var n = lista.length;
+
+  function px(i) { return padL + (i/(n-1||1))*(W-padL-padR); }
+  function py(v) { return padT + (1-((v-minVal)/rango))*(H-padT-padB); }
+
+  var puntos = lista.map(function(r,i){ return px(i)+','+py(r.total_general||0); }).join(' ');
+  var polyPoints = lista.map(function(r,i){ return px(i)+','+py(r.total_general||0); });
+  var areaPoints = [padL+','+( H-padB)].concat(polyPoints).concat([(W-padR)+','+(H-padB)]).join(' ');
+
+  // Líneas de grilla y etiquetas Y
+  var gridLines = '';
+  var steps = 4;
+  for (var s=0; s<=steps; s++) {
+    var yv = minVal + (rango/steps)*s;
+    var yp = py(yv);
+    gridLines += '<line x1="'+padL+'" y1="'+yp+'" x2="'+(W-padR)+'" y2="'+yp+'" stroke="#2a2a2a" stroke-width="1"/>';
+    gridLines += '<text x="'+(padL-6)+'" y="'+(yp+4)+'" text-anchor="end" fill="#555" font-size="10" font-family="Courier New">$'+Math.round(yv/1000)+'k</text>';
+  }
+
+  // Etiquetas X
+  var xLabels = '';
+  var maxLabels = Math.min(n, 8);
+  for (var xi=0; xi<n; xi++) {
+    if (n <= 8 || xi % Math.ceil(n/8) === 0 || xi === n-1) {
+      var xp2 = px(xi);
+      var fecha = lista[xi].fecha||'';
+      var fechaShort = fecha.substring(0,5); // DD/MM
+      xLabels += '<text x="'+xp2+'" y="'+(H-padB+16)+'" text-anchor="middle" fill="#555" font-size="10" font-family="Courier New">'+fechaShort+'</text>';
+    }
+  }
+
+  // Puntos interactivos
+  var dots = lista.map(function(r,i){
+    return '<circle cx="'+px(i)+'" cy="'+py(r.total_general||0)+'" r="4" fill="#00e5a0" stroke="#0f0f0f" stroke-width="2">' +
+      '<title>'+r.fecha+': '+money(r.total_general)+'</title></circle>';
+  }).join('');
+
+  chartEl.innerHTML =
+    '<svg width="100%" height="'+H+'" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' +
+      gridLines + xLabels +
+      '<polygon points="'+areaPoints+'" fill="rgba(0,229,160,0.08)"/>' +
+      '<polyline points="'+puntos+'" fill="none" stroke="#00e5a0" stroke-width="2" stroke-linejoin="round"/>' +
+      dots +
+    '</svg>';
+
+  // Tabla detalle
+  var tbody = document.getElementById('an-body');
+  tbody.innerHTML = '';
   lista.forEach(function(r) {
     var tarj = (r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0);
     var transf = (r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0);
@@ -1147,19 +1209,3 @@ async function renderAnalisis() {
     tbody.appendChild(tr2);
   });
 }
-// ══ INIT ═════════════════════════════════════════════════════════
-// Precargar config Supabase si no hay una guardada
-(function() {
-  const cfg = getCfg();
-  if (!cfg.url) {
-    saveCfg({ url: 'https://dihhccmimdzcfsjcobgs.supabase.co', key: 'sb_publishable_Sf68jNa72m3UJcsl014Vhg_sFp_BYqD' });
-  }
-  // Siempre pedir login al entrar
-  sessionStorage.removeItem('rdcaja_admin');
-  document.getElementById('login-overlay').style.display = 'flex';
-  // Enter en login
-  document.getElementById('l-pass').addEventListener('keydown', function(e) { if(e.key==='Enter') doLogin(); });
-})();
-</script>
-</body>
-</html>
