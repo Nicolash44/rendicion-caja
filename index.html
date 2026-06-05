@@ -752,7 +752,7 @@ async function renderHistorial() {
     const cuadra = Math.abs(sumaMedios-(r.total_general||0)) < 10;
     const difVal = sumaMedios - (r.total_general||0);
     tr2.innerHTML =
-      '<td>' + (r.fecha||'—') + '</td>' +
+      '<td>' + (r.fecha||'—') + (r.contado ? ' <span style="color:var(--accent);font-size:11px">✓</span>' : '') + '</td>' +
       '<td>' + (r.cajera||'—') + '</td>' +
       '<td class="ac">' + money(r.efectivo_bruto||r.efectivo_total) + '</td>' +
       '<td class="ac">' + money(tarjetas) + '</td>' +
@@ -796,6 +796,7 @@ const CAMPOS_EDIT = [
   { id: 'cuenta_dni',     label: 'Cuenta DNI',      tipo: 'number' },
   { id: 'total_general',  label: 'Total formulario',tipo: 'number' },
   { id: 'observaciones',  label: 'Observaciones',   tipo: 'text'   },
+  { id: 'contado',        label: 'Contado',         tipo: 'checkbox' },
 ];
 
 function abrirEditar(id) {
@@ -817,8 +818,13 @@ function abrirEditar(id) {
     const inp = document.createElement('input');
     inp.id = 'edit-' + c.id;
     inp.type = c.tipo;
-    inp.value = r[c.id] != null ? r[c.id] : '';
-    inp.style.cssText = 'width:100%;font-family:var(--mono);font-size:0.82rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.4rem 0.6rem;box-sizing:border-box';
+    if (c.tipo === 'checkbox') {
+      inp.checked = r[c.id] === true;
+      inp.style.cssText = 'width:20px;height:20px;accent-color:var(--accent);cursor:pointer;margin-top:4px';
+    } else {
+      inp.value = r[c.id] != null ? r[c.id] : '';
+      inp.style.cssText = 'width:100%;font-family:var(--mono);font-size:0.82rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.4rem 0.6rem;box-sizing:border-box';
+    }
     wrap.appendChild(lbl);
     wrap.appendChild(inp);
     grid.appendChild(wrap);
@@ -837,7 +843,13 @@ async function guardarEdicion() {
   var updates = {};
   CAMPOS_EDIT.forEach(function(c) {
     var el = document.getElementById('edit-' + c.id);
-    updates[c.id] = c.tipo === 'number' ? (parseFloat(el.value)||0) : (el.value.trim()||null);
+    if (c.tipo === 'checkbox') {
+      updates[c.id] = el.checked;
+    } else if (c.tipo === 'number') {
+      updates[c.id] = parseFloat(el.value)||0;
+    } else {
+      updates[c.id] = el.value.trim()||null;
+    }
   });
   updates._id = editandoId;
 
@@ -1157,7 +1169,7 @@ async function renderAnalisis() {
     var tarj = (r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0);
     var transf = (r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0);
     var tr2 = document.createElement('tr');
-    tr2.innerHTML = '<td>' + (r.fecha||'—') + '</td>' +
+    tr2.innerHTML = '<td>' + (r.fecha||'—') + (r.contado ? ' <span style="color:var(--accent);font-size:11px">✓</span>' : '') + '</td>' +
       '<td>' + (r.cajera||'—') + '</td>' +
       '<td class="ac">' + money(r.efectivo_bruto||r.efectivo_total) + '</td>' +
       '<td class="ac">' + money(tarj) + '</td>' +
