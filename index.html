@@ -183,8 +183,8 @@ function doLogout() {
 </div>
 
 <header>
-  <h1>RENDICIÓN DE CAJA</h1>
-  <span>v4.0 · Supabase sync</span>
+  <h1>RENDICIÓN DE CAJA / SCANNER IA</h1>
+  <span>v3.0 · Supabase sync</span>
   <span id="user-badge" style="margin-left:auto;font-size:0.72rem;color:var(--text3);cursor:pointer" onclick="doLogout()">— Salir</span>
 </header>
 
@@ -368,6 +368,7 @@ create policy "acceso anonimo" on rendiciones
 // ══ VARIABLES GLOBALES ═══════════════════════════════════════════
 var sortCol = 'fecha', sortDir = 1, filtro = {};
 var editandoId = null;
+var MP_TOKEN = 'APP_USR-2465170409214671-060420-b591e7374fcfded2c9122a16db06a62d-103804473';
 
 // ══ SUPABASE CONFIG ═══════════════════════════════════════════════
 const LOC_KEY = 'rdcaja_data';
@@ -763,11 +764,66 @@ async function renderHistorial() {
       '</td>' +
       (esReadonly() ? '<td></td>' :
         '<td style="display:flex;gap:4px">' +
+        (function(f){ var pts=f.split('/'); var d=new Date(pts[2]+'-'+pts[1]+'-'+pts[0]); return d >= new Date('2026-06-05') ? '<button class="btn" style="font-size:11px;padding:2px 7px;color:var(--accent)" title="Verificar con Mercado Pago" onclick="event.stopPropagation();verificarMP(\'' + f + '\',' + (r.transferencias||0) + ')">MP</button>' : ''; })(r.fecha||'') +
         '<button class="btn" style="font-size:11px;padding:2px 7px" onclick="event.stopPropagation();abrirEditar(' + r._id + ')">✎</button>' +
         '<button class="btn" style="font-size:11px;padding:2px 7px;color:var(--danger)" onclick="event.stopPropagation();eliminar(' + r._id + ')">✕</button>' +
         '</td>');
     tbody.appendChild(tr2);
   });
+}
+
+// ══ MERCADO PAGO ═════════════════════════════════════════════════
+async function verificarMP(fecha, transferenciaCajera) {
+  // Convertir DD/MM/AAAA a AAAA-MM-DD
+  var pts = fecha.split('/');
+  var fechaISO = pts[2] + '-' + pts[1] + '-' + pts[0];
+  // Ajustar a horario Argentina (UTC-3)
+  var desde = fechaISO + 'T03:00:00Z';
+  var hasta = pts[2] + '-' + pts[1] + '-' + (String(parseInt(pts[0])+1).padStart(2,'0')) + 'T02:59:59Z';
+
+  try {
+    var r = await fetch(
+      'https://api.mercadopago.com/v1/payments/search?range=date_created&begin_date=' + desde + '&end_date=' + hasta + '&status=approved&limit=100',
+      { headers: { 'Authorization': 'Bearer ' + MP_TOKEN } }
+    );
+    var data = await r.json();
+    if (!data.results) throw new Error('Sin resultados');
+
+    // Filtrar pagos que no son cobros del negocio:
+    // - debin_transfer: transferencias propias
+    // - store_id presente: compras en comercios fisicos con QR ajeno
+    // - external_reference empieza con '2000': compras en Mercado Libre
+    var pagosFiltrados = data.results.filter(function(p) {
+      if (p.payment_method_id === 'debin_transfer') return false;
+      if (p.store_id) return false;
+      if (p.external_reference && p.external_reference.toString().startsWith('2000')) return false;
+      return true;
+    });
+    var totalMP = pagosFiltrados.reduce(function(s, p) { return s + (p.transaction_amount||0); }, 0);
+    var diff = totalMP - transferenciaCajera;
+    var difColor = Math.abs(diff) < 10 ? 'var(--accent)' : Math.abs(diff) <= 500 ? 'var(--warn)' : 'var(--danger)';
+
+    // Mostrar modal con resultado
+    document.getElementById('modal-title').textContent = 'Verificacion MP — ' + fecha;
+    document.getElementById('modal-body').innerHTML =
+      '<div class="msec"><h4>Transferencias</h4>' +
+        kv2('Cajera cargo', money(transferenciaCajera)) +
+        kv2('Total MP (' + pagosFiltrados.length + ' pagos)', '<span style="color:var(--accent)">' + money(totalMP) + '</span>') +
+        kv2('Diferencia', '<span style="color:' + difColor + '">' + (diff>=0?'+':'') + money(diff) + '</span>') +
+      '</div>' +
+      '<div class="msec"><h4>Detalle pagos aprobados</h4>' +
+        pagosFiltrados.slice(0,15).map(function(p) {
+          return '<div style="display:flex;justify-content:space-between;padding:0.25rem 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:0.78rem">' +
+            '<span style="color:var(--text2)">' + (p.date_created||'').substring(11,16) + ' — ' + (p.payment_method_id||'') + '</span>' +
+            '<span style="font-family:var(--mono);color:var(--accent)">' + money(p.transaction_amount) + '</span>' +
+          '</div>';
+        }).join('') +
+        (pagosFiltrados.length > 15 ? '<div style="font-size:0.75rem;color:var(--text3);margin-top:0.4rem">... y ' + (pagosFiltrados.length-15) + ' más</div>' : '') +
+      '</div>';
+    document.getElementById('overlay').classList.add('open');
+  } catch(e) {
+    toast('Error al consultar MP: ' + e.message, 'warn');
+  }
 }
 
 async function eliminar(id) {
