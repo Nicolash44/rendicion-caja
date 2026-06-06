@@ -143,7 +143,13 @@
     <!-- OTROS MEDIOS -->
     <div class="card">
       <div class="card-title">Otros medios</div>
-      <div class="input-row"><label>Transferencias</label><input type="number" id="f-transf" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcular()" onblur="if(parseFloat(this.value)<0)this.value=0;"></div>
+      <div class="input-row">
+        <label>Transferencias</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="number" id="f-transf" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcular()" onblur="if(parseFloat(this.value)<0)this.value=0;" style="width:130px">
+          <button onclick="traerMP()" id="btn-mp" style="font-family:var(--mono);font-size:0.72rem;padding:4px 10px;border:1px solid var(--accent);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer;white-space:nowrap">Traer MP</button>
+        </div>
+      </div>
       <div class="input-row"><label>QR Payway</label><input type="number" id="f-or" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcular()" onblur="if(parseFloat(this.value)<0)this.value=0;"></div>
       <div class="input-row"><label>Cuenta DNI</label><input type="number" id="f-cdni" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcular()" onblur="if(parseFloat(this.value)<0)this.value=0;"></div>
     </div>
@@ -199,6 +205,7 @@ var SUPA_URL = 'https://dihhccmimdzcfsjcobgs.supabase.co';
 var SUPA_KEY = 'sb_publishable_Sf68jNa72m3UJcsl014Vhg_sFp_BYqD';
 
 var BILLETES = [20000, 10000, 2000, 1000, 500, 200, 100, 50, 20];
+var MP_TOKEN = 'APP_USR-2465170409214671-060420-b591e7374fcfded2c9122a16db06a62d-103804473';
 var gastoItems = [];
 var gastoId = 0;
 var usuarioActual = null;
@@ -493,6 +500,48 @@ async function guardar() {
     calcular();
   } else {
     showErr('Error al guardar. Verifica la conexion e intenta de nuevo.');
+  }
+}
+
+async function traerMP() {
+  var fechaRaw = document.getElementById('f-fecha').value;
+  if (!fechaRaw) { toast('Primero selecciona la fecha', 'warn'); return; }
+
+  var btn = document.getElementById('btn-mp');
+  btn.textContent = '...';
+  btn.disabled = true;
+
+  try {
+    var pts = fechaRaw.split('-');
+    var desde = fechaRaw + 'T03:00:00Z';
+    var dia = parseInt(pts[2]) + 1;
+    var hasta = pts[0] + '-' + pts[1] + '-' + String(dia).padStart(2,'0') + 'T02:59:59Z';
+
+    var r = await fetch(
+      'https://api.mercadopago.com/v1/payments/search?range=date_created&begin_date=' + desde + '&end_date=' + hasta + '&status=approved&limit=100',
+      { headers: { 'Authorization': 'Bearer ' + MP_TOKEN } }
+    );
+    var data = await r.json();
+    if (!data.results) throw new Error('Sin resultados');
+
+    var filtrados = data.results.filter(function(p) {
+      if (p.payment_method_id === 'debin_transfer') return false;
+      if (p.store_id) return false;
+      if (p.external_reference && p.external_reference.toString().startsWith('2000')) return false;
+      if (p.operation_type === 'partition_transfer') return false;
+      if (p.operation_type === 'money_transfer' && !p.collector_id) return false;
+      return true;
+    });
+
+    var total = filtrados.reduce(function(s, p) { return s + (p.transaction_amount||0); }, 0);
+    document.getElementById('f-transf').value = Math.round(total);
+    calcular();
+    toast('MP: ' + filtrados.length + ' pagos = $' + Math.round(total).toLocaleString('es-AR'), 'ok');
+  } catch(e) {
+    toast('Error al consultar MP', 'warn');
+  } finally {
+    btn.textContent = 'Traer MP';
+    btn.disabled = false;
   }
 }
 
