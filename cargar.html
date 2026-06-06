@@ -291,7 +291,10 @@ function mostrarForm() {
   document.getElementById('form-section').style.display = 'block';
   document.getElementById('user-name').textContent = usuarioActual.nombre;
   var hoy = new Date();
-  document.getElementById('f-fecha').value = hoy.toISOString().split('T')[0];
+  var fechaStr = hoy.toISOString().split('T')[0];
+  document.getElementById('f-fecha').value = fechaStr;
+  var btnmp = document.getElementById('btn-mp');
+  if (btnmp) btnmp.style.display = new Date(fechaStr) >= new Date('2026-06-05') ? 'inline-block' : 'none';
   renderGastos();
   calcular();
 }
