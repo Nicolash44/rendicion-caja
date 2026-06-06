@@ -764,8 +764,7 @@ async function renderHistorial() {
       '</td>' +
       (esReadonly() ? '<td></td>' :
         '<td style="display:flex;gap:4px">' +
-        (function(f){ var pts=f.split('/'); var d=new Date(pts[2]+'-'+pts[1]+'-'+pts[0]); return d >= new Date('2026-06-05') ? '<button class="btn" style="font-size:11px;padding:2px 7px;color:var(--accent)" title="Verificar con Mercado Pago" onclick="event.stopPropagation();verificarMP(\'' + f + '\',' + (r.transferencias||0) + ')">MP</button>' : ''; })(r.fecha||'') +
-        '<button class="btn" style="font-size:11px;padding:2px 7px" onclick="event.stopPropagation();abrirEditar(' + r._id + ')">✎</button>' +
+           '<button class="btn" style="font-size:11px;padding:2px 7px" onclick="event.stopPropagation();abrirEditar(' + r._id + ')">✎</button>' +
         '<button class="btn" style="font-size:11px;padding:2px 7px;color:var(--danger)" onclick="event.stopPropagation();eliminar(' + r._id + ')">✕</button>' +
         '</td>');
     tbody.appendChild(tr2);
