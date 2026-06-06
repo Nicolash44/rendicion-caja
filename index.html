@@ -496,8 +496,10 @@ function showTab(t) {
       sfrom.value = y + '-' + m + '-01';
       var lastDay = new Date(y, hoy.getMonth()+1, 0).getDate();
       sto.value = y + '-' + m + '-' + String(lastDay).padStart(2,'0');
+      aplicarFiltro();
+    } else {
+      renderHistorial();
     }
-    renderHistorial();
   }
   if (t === 'config') refreshConfig();
   if (t === 'analisis') renderAnalisis();
