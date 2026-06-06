@@ -97,7 +97,7 @@
       <div class="card-title">Datos del turno</div>
       <div class="input-row">
         <label>Fecha</label>
-        <input type="date" id="f-fecha" style="width:160px;font-family:var(--mono);font-size:0.85rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.35rem 0.6rem;">
+        <input type="date" id="f-fecha" onchange="var d=new Date(this.value);var btnmp=document.getElementById('btn-mp');if(btnmp)btnmp.style.display=d>=new Date('2026-06-05')?'inline-block':'none';" style="width:160px;font-family:var(--mono);font-size:0.85rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.35rem 0.6rem;">
       </div>
     </div>
 
@@ -147,7 +147,7 @@
         <label>Transferencias</label>
         <div style="display:flex;gap:6px;align-items:center">
           <input type="number" id="f-transf" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcular()" onblur="if(parseFloat(this.value)<0)this.value=0;" style="width:130px">
-          <button onclick="traerMP()" id="btn-mp" style="font-family:var(--mono);font-size:0.72rem;padding:4px 10px;border:1px solid var(--accent);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer;white-space:nowrap">Traer MP</button>
+          <button onclick="traerMP()" id="btn-mp" style="font-family:var(--mono);font-size:0.72rem;padding:4px 10px;border:1px solid var(--accent);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer;white-space:nowrap;display:none">Traer MP</button>
         </div>
       </div>
       <div class="input-row"><label>QR Payway</label><input type="number" id="f-or" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcular()" onblur="if(parseFloat(this.value)<0)this.value=0;"></div>
