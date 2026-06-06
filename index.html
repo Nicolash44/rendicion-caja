@@ -790,13 +790,17 @@ async function verificarMP(fecha, transferenciaCajera) {
     if (!data.results) throw new Error('Sin resultados');
 
     // Filtrar pagos que no son cobros del negocio:
-    // - debin_transfer: transferencias propias
-    // - store_id presente: compras en comercios fisicos con QR ajeno
+    // - debin_transfer: transferencias propias internas
+    // - store_id presente: compras en comercios fisicos ajenos
     // - external_reference empieza con '2000': compras en Mercado Libre
+    // - operation_type partition_transfer: retiros de reserva internos de MP
+    // - operation_type money_transfer: transferencias de salida
     var pagosFiltrados = data.results.filter(function(p) {
       if (p.payment_method_id === 'debin_transfer') return false;
       if (p.store_id) return false;
       if (p.external_reference && p.external_reference.toString().startsWith('2000')) return false;
+      if (p.operation_type === 'partition_transfer') return false;
+      if (p.operation_type === 'money_transfer' && !p.collector_id) return false;
       return true;
     });
     var totalMP = pagosFiltrados.reduce(function(s, p) { return s + (p.transaction_amount||0); }, 0);
