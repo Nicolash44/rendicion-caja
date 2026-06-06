@@ -493,13 +493,14 @@ function showTab(t) {
       var hoy = new Date();
       var y = hoy.getFullYear();
       var m = String(hoy.getMonth()+1).padStart(2,'0');
-      sfrom.value = y + '-' + m + '-01';
+      var desde = y + '-' + m + '-01';
       var lastDay = new Date(y, hoy.getMonth()+1, 0).getDate();
-      sto.value = y + '-' + m + '-' + String(lastDay).padStart(2,'0');
-      aplicarFiltro();
-    } else {
-      renderHistorial();
+      var hasta = y + '-' + m + '-' + String(lastDay).padStart(2,'0');
+      sfrom.value = desde;
+      sto.value = hasta;
+      filtro = { desde: desde, hasta: hasta, cajera: '' };
     }
+    renderHistorial();
   }
   if (t === 'config') refreshConfig();
   if (t === 'analisis') renderAnalisis();
