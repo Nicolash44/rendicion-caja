@@ -485,7 +485,20 @@ function showTab(t) {
     const map = { scanner:'escan', historial:'hist', analisis:'anál', config:'config' };
     if (el.textContent.toLowerCase().includes(map[t])) el.classList.add('active');
   });
-  if (t === 'historial') renderHistorial();
+  if (t === 'historial') {
+    // Si no hay filtro activo, setear mes actual por defecto
+    var sfrom = document.getElementById('s-from');
+    var sto = document.getElementById('s-to');
+    if (!sfrom.value && !sto.value) {
+      var hoy = new Date();
+      var y = hoy.getFullYear();
+      var m = String(hoy.getMonth()+1).padStart(2,'0');
+      sfrom.value = y + '-' + m + '-01';
+      var lastDay = new Date(y, hoy.getMonth()+1, 0).getDate();
+      sto.value = y + '-' + m + '-' + String(lastDay).padStart(2,'0');
+    }
+    renderHistorial();
+  }
   if (t === 'config') refreshConfig();
   if (t === 'analisis') renderAnalisis();
 }
@@ -752,6 +765,7 @@ async function renderHistorial() {
     const sumaMedios = (r.efectivo_total||0)+tarjetas+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0);
     const cuadra = Math.abs(sumaMedios-(r.total_general||0)) < 10;
     const difVal = sumaMedios - (r.total_general||0);
+    var esHistorico = !r.cajera || (r.tarjeta_total_historico && r.tarjeta_total_historico > 0);
     tr2.innerHTML =
       '<td>' + (r.fecha||'—') + (r.contado ? ' <span style="color:var(--accent);font-size:11px">✓</span>' : '') + '</td>' +
       '<td>' + (r.cajera||'—') + '</td>' +
@@ -759,9 +773,10 @@ async function renderHistorial() {
       '<td class="ac">' + money(tarjetas) + '</td>' +
       '<td class="ac">' + money(r.transferencias) + '</td>' +
       '<td class="ac">' + money(r.total_general) + '</td>' +
+      (esHistorico ? '<td style="color:var(--text3);font-size:10px">histórico</td>' :
       '<td class="ac" style="color:' + (cuadra?'var(--accent)':'var(--danger)') + '">' +
         (cuadra ? '✓' : money(sumaMedios) + '<br><span style="font-size:10px">' + (difVal>0?'+':'') + money(difVal) + '</span>') +
-      '</td>' +
+      '</td>') +
       (esReadonly() ? '<td></td>' :
         '<td style="display:flex;gap:4px">' +
            '<button class="btn" style="font-size:11px;padding:2px 7px" onclick="event.stopPropagation();abrirEditar(' + r._id + ')">✎</button>' +
