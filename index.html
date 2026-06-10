@@ -464,7 +464,6 @@ function esReadonly() {
 }
 
 function mostrarSoloLectura() {
-  // Ocultar tabs de scanner y config, solo mostrar historial y analisis
   var tabs = document.querySelectorAll('.tab-nav button');
   tabs.forEach(function(btn) {
     var txt = btn.textContent.toLowerCase();
@@ -472,8 +471,20 @@ function mostrarSoloLectura() {
       btn.style.display = 'none';
     }
   });
-  // Ocultar botones de editar y borrar en historial
   document.body.classList.add('readonly-mode');
+  var hoy = new Date();
+  var y = hoy.getFullYear();
+  var m = String(hoy.getMonth()+1).padStart(2,'0');
+  var lastDay = new Date(y, hoy.getMonth()+1, 0).getDate();
+  var sfrom = document.getElementById('s-from');
+  var sto = document.getElementById('s-to');
+  sfrom.value = y+'-'+m+'-01';
+  sto.value = y+'-'+m+'-'+String(lastDay).padStart(2,'0');
+  sfrom.min = y+'-'+m+'-01';
+  sfrom.max = y+'-'+m+'-'+String(lastDay).padStart(2,'0');
+  sto.min = y+'-'+m+'-01';
+  sto.max = y+'-'+m+'-'+String(lastDay).padStart(2,'0');
+  filtro = { desde: sfrom.value, hasta: sto.value, cajera: '' };
   showTab('historial');
 }
 
