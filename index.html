@@ -202,7 +202,7 @@ function doLogout() {
       <input type="date" id="s-to" title="Hasta">
       <select id="s-cajera"><option value="">Todas las cajeras</option></select>
       <button class="btn" onclick="aplicarFiltro()">Filtrar</button>
-      <button class="btn" onclick="limpiarFiltro()">Limpiar</button>
+      <button class="btn" id="btn-limpiar" onclick="limpiarFiltro()">Limpiar</button>
       <button class="btn" style="margin-left:auto" onclick="exportCSVHistorial()">Exportar CSV</button>
     </div>
     <div class="totals-grid" id="totals-grid"></div>
@@ -484,6 +484,14 @@ function mostrarSoloLectura() {
   sfrom.max = y+'-'+m+'-'+String(lastDay).padStart(2,'0');
   sto.min = y+'-'+m+'-01';
   sto.max = y+'-'+m+'-'+String(lastDay).padStart(2,'0');
+  sfrom.readOnly = true;
+  sto.readOnly = true;
+  sfrom.style.pointerEvents = 'none';
+  sto.style.pointerEvents = 'none';
+  sfrom.style.opacity = '0.5';
+  sto.style.opacity = '0.5';
+  var btnLimpiar = document.getElementById('btn-limpiar');
+  if (btnLimpiar) btnLimpiar.style.display = 'none';
   filtro = { desde: sfrom.value, hasta: sto.value, cajera: '' };
   showTab('historial');
 }
