@@ -212,7 +212,7 @@ function doLogout() {
           <th onclick="sortBy('fecha')">Fecha ↕</th>
           <th onclick="sortBy('cajera')">Cajera ↕</th>
           <th onclick="sortBy('efectivo')">Efectivo ↕</th>
-          <th onclick="sortBy('tarjetas')">Tarjetas ↕</th>
+          <th onclick="sortBy('tarjetas')">Tarjeta + QR ↕</th>
           <th onclick="sortBy('transferencias')">Transfer ↕</th>
           <th onclick="sortBy('total')">Total ↕</th>
           <th></th>
@@ -319,8 +319,8 @@ create policy "acceso anonimo" on rendiciones
             <th>Fecha</th>
             <th>Cajera</th>
             <th>Efectivo</th>
-            <th>Tarjetas</th>
-            <th>Transfer+QR</th>
+            <th>Tarjeta + QR</th>
+            <th>Transfer</th>
             <th>Total</th>
           </tr></thead>
           <tbody id="an-body"></tbody>
@@ -769,8 +769,8 @@ async function renderHistorial() {
     '<div class="tc"><div class="tc-l">Registros</div><div class="tc-v">' + lista.length + '</div></div>' +
     '<div class="tc"><div class="tc-l">Total acumulado</div><div class="tc-v">' + money(ttg) + '</div></div>' +
     '<div class="tc"><div class="tc-l">Efectivo</div><div class="tc-v">' + money(te) + '</div></div>' +
-    '<div class="tc"><div class="tc-l">Tarjetas</div><div class="tc-v">' + money(ttarj) + '</div></div>' +
-    '<div class="tc"><div class="tc-l">Transfer+QR</div><div class="tc-v">' + money(ttr) + '</div></div>' +
+    '<div class="tc"><div class="tc-l">Tarjeta + QR</div><div class="tc-v">' + money(ttarj) + '</div></div>' +
+    '<div class="tc"><div class="tc-l">Transfer</div><div class="tc-v">' + money(ttr) + '</div></div>' +
     '<div class="tc"><div class="tc-l">Gastos</div><div class="tc-v" style="color:var(--warn)">' + money(tgastos) + '</div></div>';
 
   const tbody = document.getElementById('hist-body');
@@ -1012,7 +1012,7 @@ function openModal(r) {
       (r.gastos_desc ? '<div style="font-family:var(--sans);font-size:0.78rem;color:var(--text2);padding:0.2rem 0 0.4rem;font-style:italic">' + r.gastos_desc + '</div>' : '') +
       (r.gastos ? kv2('Efectivo neto', money((r.efectivo_bruto||r.efectivo_total||0)+(r.gastos||0))) : '') +
     '</div>' +
-    '<div class="msec"><h4>Tarjetas</h4>' +
+    '<div class="msec"><h4>Tarjeta + QR</h4>' +
       kv2('Visa Credito',money(r.visa_credito)) +
       kv2('Visa Debito',money(r.visa_debito)) +
       kv2('Amex',money(r.amex)) +
@@ -1195,8 +1195,8 @@ async function renderAnalisis() {
     '<div class="tc"><div class="tc-l">Total acumulado</div><div class="tc-v">' + money(ttg) + '</div></div>' +
     '<div class="tc"><div class="tc-l">Promedio</div><div class="tc-v">' + money(lista.length ? Math.round(ttg/lista.length) : 0) + '</div></div>' +
     '<div class="tc"><div class="tc-l">Efectivo</div><div class="tc-v">' + money(te) + '</div></div>' +
-    '<div class="tc"><div class="tc-l">Tarjetas</div><div class="tc-v">' + money(ttarj) + '</div></div>' +
-    '<div class="tc"><div class="tc-l">Transfer+QR</div><div class="tc-v">' + money(ttr) + '</div></div>';
+    '<div class="tc"><div class="tc-l">Tarjeta + QR</div><div class="tc-v">' + money(ttarj) + '</div></div>' +
+    '<div class="tc"><div class="tc-l">Transfer</div><div class="tc-v">' + money(ttr) + '</div></div>';
 
   // Gráfico SVG
   var chartEl = document.getElementById('an-chart');
