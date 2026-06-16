@@ -434,6 +434,7 @@ function flatten(d) {
     visa_debito: d.visa_debito||0,
     amex: d.amex||0,
     mastercard: d.mastercard||0,
+    mastercard_deb: d.mastercard_deb||0,
     maestro: d.maestro||0,
     naranja: d.naranja||0,
     transferencias: d.transferencias||0,
@@ -576,7 +577,7 @@ INSTRUCCIONES MUY IMPORTANTES:
 
 4. DEBAJO DE LA TABLA DE TARJETAS hay filas con sus totales:
    - TRANSFERENCIAS → 92880
-   - OR PAYWAY → 48960
+   - QR PAYWAY → 48960
    - CUENTA DNI → 0 (vacío)
 
 5. TOTAL AL PIE: el TOTAL $ al pie del formulario (suma de todo) es 446829.
@@ -660,7 +661,7 @@ function renderResults(d) {
     ['Maestro',        d.maestro],
     ['Naranja',        d.naranja],
     ['Transferencias', d.transferencias],
-    ['OR Payway',      d.or_patagway],
+    ['QR Payway',      d.or_patagway],
     ['Cuenta DNI',     d.cuenta_dni],
   ];
 
@@ -752,18 +753,18 @@ async function renderHistorial() {
     else if (sortCol==='cajera') { va=a.cajera||''; vb=b.cajera||''; }
     else if (sortCol==='efectivo') { va=a.efectivo_total||0; vb=b.efectivo_total||0; }
     else if (sortCol==='tarjetas') { va=(a.visa_credito||0)+(a.visa_debito||0)+(a.amex||0)+(a.mastercard||0)+(a.maestro||0)+(a.naranja||0); vb=(b.visa_credito||0)+(b.visa_debito||0)+(b.amex||0)+(b.mastercard||0)+(b.maestro||0)+(b.naranja||0); }
-    else if (sortCol==='transferencias') { va=(a.transferencias||0)+(a.or_patagway||0)+(a.cuenta_dni||0); vb=(b.transferencias||0)+(b.or_patagway||0)+(b.cuenta_dni||0); }
+    else if (sortCol==='transferencias') { va=(a.transferencias||0)+(a.cuenta_dni||0); vb=(b.transferencias||0)+(b.cuenta_dni||0); }
     else if (sortCol==='total') { va=a.total_general||0; vb=b.total_general||0; }
     return va<vb?-sortDir:va>vb?sortDir:0;
   });
 
   // totales
   const te   = lista.reduce((s,r)=>s+(r.efectivo_total||0),0);
-  const ttarj = lista.reduce((s,r)=>s+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0),0);
-  const ttr  = lista.reduce((s,r)=>s+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0),0);
+  const ttarj = lista.reduce((s,r)=>s+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.mastercard_deb||0)+(r.maestro||0)+(r.naranja||0)+(r.or_patagway||0),0);
+  const ttr  = lista.reduce((s,r)=>s+(r.transferencias||0)+(r.cuenta_dni||0),0);
   const ttg  = lista.reduce((s,r)=>s+(r.total_general||0),0);
   const tgastos = lista.reduce((s,r)=>s+(r.gastos||0),0);
-  const ndif = lista.filter(r=>{ const sm=(r.efectivo_total||0)+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0)+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0); return Math.abs(sm-(r.total_general||0))>=10; }).length;
+  const ndif = lista.filter(r=>{ const sm=(r.efectivo_total||0)+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.mastercard_deb||0)+(r.maestro||0)+(r.naranja||0)+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0); return Math.abs(sm-(r.total_general||0))>=10; }).length;
   document.getElementById('totals-grid').innerHTML =
     '<div class="tc"><div class="tc-l">Registros</div><div class="tc-v">' + lista.length + '</div></div>' +
     '<div class="tc"><div class="tc-l">Total acumulado</div><div class="tc-v">' + money(ttg) + '</div></div>' +
@@ -783,8 +784,8 @@ async function renderHistorial() {
     const ds = diff>0?'+ '+money(diff):money(diff);
     const tr2 = document.createElement('tr');
     tr2.onclick = () => openModal(r);
-    const tarjetas = (r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0);
-    const sumaMedios = (r.efectivo_total||0)+tarjetas+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0);
+    const tarjetas = (r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.mastercard_deb||0)+(r.maestro||0)+(r.naranja||0)+(r.or_patagway||0);
+    const sumaMedios = (r.efectivo_total||0)+tarjetas+(r.transferencias||0)+(r.cuenta_dni||0);
     const cuadra = Math.abs(sumaMedios-(r.total_general||0)) < 10;
     const difVal = sumaMedios - (r.total_general||0);
     var esHistorico = !r.cajera || (r.tarjeta_total_historico && r.tarjeta_total_historico > 0);
@@ -886,10 +887,11 @@ const CAMPOS_EDIT = [
   { id: 'visa_debito',    label: 'Visa Débito',     tipo: 'number' },
   { id: 'amex',           label: 'Amex',            tipo: 'number' },
   { id: 'mastercard',     label: 'Mastercard',      tipo: 'number' },
+  { id: 'mastercard_deb', label: 'Mastercard Déb',  tipo: 'number' },
   { id: 'maestro',        label: 'Maestro',         tipo: 'number' },
   { id: 'naranja',        label: 'Naranja',         tipo: 'number' },
   { id: 'transferencias', label: 'Transferencias',  tipo: 'number' },
-  { id: 'or_patagway',    label: 'OR Payway',       tipo: 'number' },
+  { id: 'or_patagway',    label: 'QR Payway',       tipo: 'number' },
   { id: 'cuenta_dni',     label: 'Cuenta DNI',      tipo: 'number' },
   { id: 'total_general',  label: 'Total formulario',tipo: 'number' },
   { id: 'observaciones',  label: 'Observaciones',   tipo: 'text'   },
@@ -995,8 +997,8 @@ function kv2(k,v) { return '<div class="kv"><span class="kv-k">' + k + '</span><
 
 function openModal(r) {
   document.getElementById('modal-title').textContent = r.fecha||'—';
-  var tarj = (r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0);
-  var transf = (r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0);
+  var tarj = (r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.mastercard_deb||0)+(r.maestro||0)+(r.naranja||0)+(r.or_patagway||0);
+  var transf = (r.transferencias||0)+(r.cuenta_dni||0);
   var sumaMedios = (r.efectivo_total||0)+tarj+transf;
   var totalDoc = r.total_general||0;
   var cuadra = Math.abs(sumaMedios-totalDoc) < 10;
@@ -1015,12 +1017,13 @@ function openModal(r) {
       kv2('Visa Debito',money(r.visa_debito)) +
       kv2('Amex',money(r.amex)) +
       kv2('Mastercard',money(r.mastercard)) +
+      kv2('Mastercard Déb',money(r.mastercard_deb)) +
       kv2('Maestro',money(r.maestro)) +
       kv2('Naranja',money(r.naranja)) +
     '</div>' +
     '<div class="msec"><h4>Otros cobros</h4>' +
       kv2('Transferencias',money(r.transferencias)) +
-      kv2('OR Payway',money(r.or_patagway)) +
+      kv2('QR Payway',money(r.or_patagway)) +
       kv2('Cuenta DNI',money(r.cuenta_dni)) +
     '</div>' +
     '<div class="msec"><h4>Diferencia</h4>' +
@@ -1097,7 +1100,7 @@ function exportCSVUnico() {
   const d=lastData, v=d.ventas||{}, c=d.cobros||{}, t=d.tarjetas_detalle||{}, g=d.gastos||{};
   const rows = [['Campo','Valor'],['Fecha',d.fecha||''],['Cajera',d.cajera||''],['Local',d.local||''],['Turno',d.turno||''],
     ['PIT',v.pit||0],['Cierre Z',v.cierre_z||0],['Accesorios',v.venta_accesorios||0],['Celulares',v.venta_celulares||0],['Venta total',v.venta_total_turno||0],
-    ['Efectivo',c.total_efectivo||0],['Tarjetas',c.total_tarjetas||0],['Transferencias',c.transferencias||0],['OR/Patagway',c.or_patagway||0],['Cuenta DNI',c.cuenta_dni||0],
+    ['Efectivo',c.total_efectivo||0],['Tarjetas',c.total_tarjetas||0],['Transferencias',c.transferencias||0],['QR Payway',c.or_patagway||0],['Cuenta DNI',c.cuenta_dni||0],
     ['Visa Cred',t.visa_credito||0],['Mastercard',t.mastercard||0],['Maestro',t.maestro||0],['Naranja',t.naranja||0],['Visa Deb',t.visa_debito||0],['Amex',t.amex||0],
     ['Total gastos',g.total_gastos||0],['Subo comision',g.total_subo_comision||0],['Total rendido',d.total_rendido||0],['Diferencia',d.diferencia||0],['Observaciones',d.observaciones||'']];
   dlCSV('rendicion_'+(d.fecha||'sin_fecha').replace(/\//g,'-')+'.csv', rows);
@@ -1183,8 +1186,8 @@ async function renderAnalisis() {
 
   var ttg   = lista.reduce(function(s,r){ return s+(r.total_general||0); }, 0);
   var te    = lista.reduce(function(s,r){ return s+(r.efectivo_bruto||r.efectivo_total||0); }, 0);
-  var ttarj = lista.reduce(function(s,r){ return s+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0); }, 0);
-  var ttr   = lista.reduce(function(s,r){ return s+(r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0); }, 0);
+  var ttarj = lista.reduce(function(s,r){ return s+(r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.mastercard_deb||0)+(r.maestro||0)+(r.naranja||0)+(r.or_patagway||0); }, 0);
+  var ttr   = lista.reduce(function(s,r){ return s+(r.transferencias||0)+(r.cuenta_dni||0); }, 0);
   var tgastos = lista.reduce(function(s,r){ return s+(r.gastos||0); }, 0);
 
   document.getElementById('an-totals').innerHTML =
@@ -1263,8 +1266,8 @@ async function renderAnalisis() {
   var tbody = document.getElementById('an-body');
   tbody.innerHTML = '';
   lista.forEach(function(r) {
-    var tarj = (r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.maestro||0)+(r.naranja||0);
-    var transf = (r.transferencias||0)+(r.or_patagway||0)+(r.cuenta_dni||0);
+    var tarj = (r.visa_credito||0)+(r.visa_debito||0)+(r.amex||0)+(r.mastercard||0)+(r.mastercard_deb||0)+(r.maestro||0)+(r.naranja||0)+(r.or_patagway||0);
+    var transf = (r.transferencias||0)+(r.cuenta_dni||0);
     var tr2 = document.createElement('tr');
     tr2.innerHTML = '<td>' + (r.fecha||'—') + (r.contado ? ' <span style="color:var(--accent);font-size:11px">✓</span>' : '') + '</td>' +
       '<td>' + (r.cajera||'—') + '</td>' +
