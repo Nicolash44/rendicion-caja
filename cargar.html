@@ -136,6 +136,7 @@
       <div class="input-row"><label>Visa Débito</label><input type="number" id="f-visa-deb" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcular()" onblur="if(parseFloat(this.value)<0)this.value=0;"></div>
       <div class="input-row"><label>Amex</label><input type="number" id="f-amex" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcular()" onblur="if(parseFloat(this.value)<0)this.value=0;"></div>
       <div class="input-row"><label>Mastercard</label><input type="number" id="f-mastercard" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcular()" onblur="if(parseFloat(this.value)<0)this.value=0;"></div>
+      <div class="input-row"><label>Mastercard Déb</label><input type="number" id="f-mastercard-deb" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcular()" onblur="if(parseFloat(this.value)<0)this.value=0;"></div>
       <div class="input-row"><label>Maestro</label><input type="number" id="f-maestro" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcular()" onblur="if(parseFloat(this.value)<0)this.value=0;"></div>
       <div class="input-row"><label>Naranja</label><input type="number" id="f-naranja" value="0" oninput="var n=parseFloat(this.value);if(!isNaN(n)&&n<0){this.value=0;}calcular()" onblur="if(parseFloat(this.value)<0)this.value=0;"></div>
     </div>
@@ -391,7 +392,7 @@ function calcular() {
 
   var totalReal = efectivoTotal +
     v('f-visa-cred') + v('f-visa-deb') + v('f-amex') +
-    v('f-mastercard') + v('f-maestro') + v('f-naranja') +
+    v('f-mastercard') + v('f-mastercard-deb') + v('f-maestro') + v('f-naranja') +
     v('f-transf') + v('f-or') + v('f-cdni');
 
   var nc = v('ts-nc');
@@ -446,7 +447,7 @@ async function guardar() {
 
   var totalReal = efectivoTotal +
     v('f-visa-cred') + v('f-visa-deb') + v('f-amex') +
-    v('f-mastercard') + v('f-maestro') + v('f-naranja') +
+    v('f-mastercard') + v('f-mastercard-deb') + v('f-maestro') + v('f-naranja') +
     v('f-transf') + v('f-or') + v('f-cdni');
 
   var row = {
@@ -463,6 +464,7 @@ async function guardar() {
     visa_debito: v('f-visa-deb'),
     amex: v('f-amex'),
     mastercard: v('f-mastercard'),
+    mastercard_deb: v('f-mastercard-deb'),
     maestro: v('f-maestro'),
     naranja: v('f-naranja'),
     transferencias: v('f-transf'),
@@ -486,7 +488,7 @@ async function guardar() {
       document.getElementById('b-' + b).value = 0;
       document.getElementById('s-' + b).textContent = '$ 0';
     });
-    ['f-visa-cred','f-visa-deb','f-amex','f-mastercard','f-maestro','f-naranja','f-transf','f-or','f-cdni'].forEach(function(id) {
+    ['f-visa-cred','f-visa-deb','f-amex','f-mastercard','f-mastercard-deb','f-maestro','f-naranja','f-transf','f-or','f-cdni'].forEach(function(id) {
       document.getElementById(id).value = 0;
     });
     ['ts-nc','ts-cz','ts-pr'].forEach(function(id) {
