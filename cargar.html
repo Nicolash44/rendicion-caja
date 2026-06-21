@@ -536,6 +536,7 @@ async function traerMP() {
       if (p.operation_type === 'partition_transfer') return false;
      if (p.operation_type === 'money_transfer' && !p.collector_id) return false;
      if (p.external_reference && String(p.external_reference).startsWith('[')) return false;
+      if (p.external_reference && String(p.external_reference).startsWith('INSTORE-')) return false;
       return true;
     });
 
