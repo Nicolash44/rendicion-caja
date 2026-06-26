@@ -537,6 +537,8 @@ async function traerMP() {
      if (p.operation_type === 'money_transfer' && !p.collector_id) return false;
      if (p.external_reference && String(p.external_reference).startsWith('[')) return false;
       if (p.external_reference && String(p.external_reference).startsWith('INSTORE-')) return false;
+      if (p.operation_type === 'investment') return false;
+      if (p.operation_type === 'account_fund' && p.payer && p.payer.id && String(p.payer.id) === String(p.collector_id) && p.transaction_amount > 200000) return false;
       return true;
     });
 
