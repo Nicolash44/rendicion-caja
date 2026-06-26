@@ -530,7 +530,7 @@ async function traerMP() {
     if (!data.results) throw new Error('Sin resultados');
 
     var filtrados = data.results.filter(function(p) {
-      if (p.payment_method_id === 'debin_transfer') return false;
+      if (p.payment_method_id === 'debin_transfer' && p.payer && String(p.payer.id) === String(p.collector_id)) return false;
       if (p.store_id) return false;
       if (p.external_reference && p.external_reference.toString().startsWith('2000')) return false;
       if (p.operation_type === 'partition_transfer') return false;
