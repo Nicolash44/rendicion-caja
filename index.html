@@ -194,6 +194,7 @@ function doLogout() {
     <button onclick="showTab('analisis')">Análisis</button>
     <button onclick="showTab('config')">Configuración</button>
     <button id="tab-btn-gastos" onclick="showTab('gastos')">Gastos</button>
+    <button id="tab-btn-balance" onclick="showTab('balance')">Balance</button>
   </div>
 
   <!-- ══ TAB HISTORIAL ══ -->
@@ -352,6 +353,10 @@ create policy "acceso anonimo" on rendiciones
           <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text3);margin-bottom:4px;text-transform:uppercase">Descripción</div>
           <input type="text" id="g-desc" placeholder="Ej: Insumos de limpieza, sueldo, servicio..." style="width:100%;font-family:var(--mono);font-size:0.82rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.4rem 0.6rem">
         </div>
+        <div style="margin-bottom:0.6rem">
+          <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text3);margin-bottom:4px;text-transform:uppercase">Fecha de pago <span style="color:var(--text3);font-size:0.65rem">(opcional)</span></div>
+          <input type="date" id="g-fecha-pago" style="width:100%;font-family:var(--mono);font-size:0.82rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.4rem 0.6rem">
+        </div>
         <button class="btn primary" onclick="agregarGasto()" style="width:auto;padding:0.5rem 1.5rem">Guardar gasto</button>
         <div id="g-err" style="font-family:var(--mono);font-size:0.78rem;color:var(--danger);margin-top:0.5rem;display:none"></div>
       </div>
@@ -378,6 +383,7 @@ create policy "acceso anonimo" on rendiciones
             <th>Fecha</th>
             <th>Descripción</th>
             <th>Monto</th>
+            <th>Fecha pago</th>
             <th id="g-acciones-th"></th>
           </tr></thead>
           <tbody id="g-body"></tbody>
@@ -387,6 +393,36 @@ create policy "acceso anonimo" on rendiciones
     </div>
 
   </div><!-- /tab-gastos -->
+
+  <!-- ══ TAB BALANCE ══ -->
+  <div id="tab-balance" class="tab-content">
+
+    <div style="display:flex;gap:0.6rem;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center">
+      <select id="bal-year" style="font-family:var(--mono);font-size:0.8rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.42rem 0.7rem">
+      </select>
+      <button class="btn" onclick="renderBalance()">Aplicar</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.6rem;margin-bottom:1.25rem" id="bal-totals"></div>
+
+    <div class="card">
+      <div class="card-title">Detalle mensual</div>
+      <div style="overflow-x:auto">
+        <table class="htable" id="bal-table">
+          <thead><tr>
+            <th>Mes</th>
+            <th>Ingresos</th>
+            <th>Egresos caja</th>
+            <th>Egresos gastos</th>
+            <th>Total egresos</th>
+            <th>Balance</th>
+          </tr></thead>
+          <tbody id="bal-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /tab-balance -->
 
 </div>
 
@@ -566,6 +602,19 @@ function showTab(t) {
     const map = { scanner:'escan', historial:'hist', analisis:'anál', config:'config' };
     if (el.textContent.toLowerCase().includes(map[t])) el.classList.add('active');
   });
+  if (t === 'balance') {
+    // Poblar selector de años
+    var selYear = document.getElementById('bal-year');
+    var curYear = new Date().getFullYear();
+    if (!selYear.options.length) {
+      for (var y = curYear; y >= curYear-3; y--) {
+        var opt = document.createElement('option');
+        opt.value = y; opt.textContent = y;
+        selYear.appendChild(opt);
+      }
+    }
+    renderBalance();
+  }
   if (t === 'gastos') {
     var hoyG = new Date().toISOString().split('T')[0];
     if (!document.getElementById('g-from').value) {
@@ -1381,6 +1430,7 @@ async function agregarGasto() {
   var fecha = document.getElementById('g-fecha').value;
   var monto = parseFloat(document.getElementById('g-monto').value);
   var desc = document.getElementById('g-desc').value.trim();
+  var fechaPago = document.getElementById('g-fecha-pago').value;
   var errEl = document.getElementById('g-err');
   errEl.style.display = 'none';
   if (!fecha) { errEl.textContent = 'Ingresa la fecha.'; errEl.style.display = 'block'; return; }
@@ -1388,10 +1438,11 @@ async function agregarGasto() {
   if (!desc) { errEl.textContent = 'Ingresa una descripcion.'; errEl.style.display = 'block'; return; }
   var pts = fecha.split('-');
   var fechaStr = pts[2] + '/' + pts[1] + '/' + pts[0];
-  var row = { fecha: fechaStr, descripcion: desc, monto: monto, creado_por: 'Agus', creado_at: new Date().toISOString() };
+  var fechaPagoStr = null;
+  if (fechaPago) { var pp = fechaPago.split('-'); fechaPagoStr = pp[2]+'/'+pp[1]+'/'+pp[0]; }
+  var row = { fecha: fechaStr, descripcion: desc, monto: monto, fecha_pago: fechaPagoStr, creado_por: 'Agus', creado_at: new Date().toISOString() };
+  var cfg = getCfg();
   try {
-    var hdrs = { 'Content-Type': 'application/json', 'apikey': supaBase(), 'Authorization': 'Bearer ' + supaBase(), 'Prefer': 'return=minimal' };
-    var cfg = getCfg();
     var r = await fetch(cfg.url + '/rest/v1/gastos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key, 'Prefer': 'return=minimal' },
@@ -1402,6 +1453,7 @@ async function agregarGasto() {
     document.getElementById('g-fecha').value = '';
     document.getElementById('g-monto').value = '';
     document.getElementById('g-desc').value = '';
+    document.getElementById('g-fecha-pago').value = '';
     cargarGastos();
   } catch(e) {
     errEl.textContent = 'Error al guardar.';
@@ -1444,7 +1496,12 @@ async function cargarGastos() {
       tr.innerHTML = '<td>' + (g.fecha||'—') + '</td>' +
         '<td>' + (g.descripcion||'—') + '</td>' +
         '<td style="font-family:var(--mono);color:var(--warn)">' + moneyG(g.monto) + '</td>' +
-        (esAdmin ? '<td><button class="btn" style="font-size:11px;padding:2px 7px;color:var(--danger)" onclick="eliminarGasto(' + g.id + ')">✕</button></td>' : '<td></td>');
+        '<td style="font-family:var(--mono);font-size:0.8rem;color:var(--text2)">' + (g.fecha_pago||'—') + '</td>' +
+        (esAdmin ?
+          '<td style="display:flex;gap:4px">' +
+            '<button class="btn" style="font-size:11px;padding:2px 7px" onclick="abrirEditarGasto(' + g.id + ','' + (g.fecha||'') + '','' + (g.descripcion||'').replace(/'/g,"\'") + '',' + (g.monto||0) + ','' + (g.fecha_pago||'') + '')">✎</button>' +
+            '<button class="btn" style="font-size:11px;padding:2px 7px;color:var(--danger)" onclick="eliminarGasto(' + g.id + ')">✕</button>' +
+          '</td>' : '<td></td>');
       tbody.appendChild(tr);
     });
   } catch(e) { console.error('Error gastos', e); }
@@ -1467,6 +1524,119 @@ function limpiarFiltroGastos() {
   document.getElementById('g-from').value = '';
   document.getElementById('g-to').value = '';
   cargarGastos();
+}
+
+async function abrirEditarGasto(id, fecha, desc, monto, fechaPago) {
+  var f = fecha ? fecha.split('/') : ['','',''];
+  var fp = fechaPago ? fechaPago.split('/') : ['','',''];
+  var newFecha = f.length===3 ? f[2]+'-'+f[1]+'-'+f[0] : '';
+  var newFP = fp.length===3 ? fp[2]+'-'+fp[1]+'-'+fp[0] : '';
+  var newDesc = prompt('Descripcion:', desc);
+  if (newDesc === null) return;
+  var newMonto = parseFloat(prompt('Monto:', monto));
+  if (isNaN(newMonto) || newMonto <= 0) { toast('Monto invalido', 'warn'); return; }
+  var newFechaInput = prompt('Fecha (YYYY-MM-DD):', newFecha);
+  if (!newFechaInput) return;
+  var newFPInput = prompt('Fecha de pago (YYYY-MM-DD, dejar vacio si no aplica):', newFP);
+  var pts = newFechaInput.split('-');
+  var fechaStr = pts[2]+'/'+pts[1]+'/'+pts[0];
+  var fechaPagoStr = null;
+  if (newFPInput) { var pp = newFPInput.split('-'); fechaPagoStr = pp[2]+'/'+pp[1]+'/'+pp[0]; }
+  var cfg = getCfg();
+  try {
+    var r = await fetch(cfg.url + '/rest/v1/gastos?id=eq.' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ fecha: fechaStr, descripcion: newDesc, monto: newMonto, fecha_pago: fechaPagoStr })
+    });
+    if (!r.ok) throw new Error();
+    toast('Gasto actualizado ✓', 'ok');
+    cargarGastos();
+  } catch(e) { toast('Error al actualizar', 'warn'); }
+}
+
+async function renderBalance() {
+  var cfg = getCfg();
+  if (!cfg.url) return;
+  var year = document.getElementById('bal-year').value || new Date().getFullYear();
+
+  // Cargar rendiciones del año
+  var r1 = await fetch(cfg.url + '/rest/v1/rendiciones?select=fecha,total_general,gastos&order=fecha.asc', { headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key } });
+  var rendiciones = await r1.json();
+
+  // Cargar gastos del año
+  var r2 = await fetch(cfg.url + '/rest/v1/gastos?select=fecha,monto&order=fecha.asc', { headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key } });
+  var gastosTab = await r2.json();
+
+  var MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  // Agrupar por mes
+  var data = {};
+  for (var m=1; m<=12; m++) {
+    data[m] = { ingresos: 0, egresosCaja: 0, egresosGastos: 0 };
+  }
+
+  rendiciones.forEach(function(r) {
+    if (!r.fecha) return;
+    var pts = r.fecha.split('/');
+    if (pts.length !== 3) return;
+    var y = parseInt(pts[2]), mo = parseInt(pts[1]);
+    if (y !== parseInt(year)) return;
+    data[mo].ingresos += (r.total_general||0);
+    data[mo].egresosCaja += (r.gastos||0);
+  });
+
+  gastosTab.forEach(function(g) {
+    if (!g.fecha) return;
+    var pts = g.fecha.split('/');
+    if (pts.length !== 3) return;
+    var y = parseInt(pts[2]), mo = parseInt(pts[1]);
+    if (y !== parseInt(year)) return;
+    data[mo].egresosGastos += (g.monto||0);
+  });
+
+  var totIngresos = 0, totEgCaja = 0, totEgGastos = 0;
+  var tbody = document.getElementById('bal-body');
+  tbody.innerHTML = '';
+
+  for (var m=1; m<=12; m++) {
+    var d = data[m];
+    var totalEgresos = d.egresosCaja + d.egresosGastos;
+    var balance = d.ingresos - totalEgresos;
+    totIngresos += d.ingresos;
+    totEgCaja += d.egresosCaja;
+    totEgGastos += d.egresosGastos;
+    if (d.ingresos === 0 && totalEgresos === 0) continue;
+    var tr = document.createElement('tr');
+    var balColor = balance >= 0 ? 'var(--accent)' : 'var(--danger)';
+    tr.innerHTML = '<td style="font-weight:600">' + MESES[m-1] + '</td>' +
+      '<td style="font-family:var(--mono);color:var(--accent)">' + money(d.ingresos) + '</td>' +
+      '<td style="font-family:var(--mono);color:var(--warn)">' + money(d.egresosCaja) + '</td>' +
+      '<td style="font-family:var(--mono);color:var(--warn)">' + money(d.egresosGastos) + '</td>' +
+      '<td style="font-family:var(--mono);color:var(--warn)">' + money(totalEgresos) + '</td>' +
+      '<td style="font-family:var(--mono);font-weight:700;color:' + balColor + '">' + money(balance) + '</td>';
+    tbody.appendChild(tr);
+  }
+
+  // Fila totales
+  var totEg = totEgCaja + totEgGastos;
+  var totBal = totIngresos - totEg;
+  var trTot = document.createElement('tr');
+  trTot.style.borderTop = '2px solid var(--border2)';
+  trTot.innerHTML = '<td style="font-weight:700">TOTAL</td>' +
+    '<td style="font-family:var(--mono);font-weight:700;color:var(--accent)">' + money(totIngresos) + '</td>' +
+    '<td style="font-family:var(--mono);font-weight:700;color:var(--warn)">' + money(totEgCaja) + '</td>' +
+    '<td style="font-family:var(--mono);font-weight:700;color:var(--warn)">' + money(totEgGastos) + '</td>' +
+    '<td style="font-family:var(--mono);font-weight:700;color:var(--warn)">' + money(totEg) + '</td>' +
+    '<td style="font-family:var(--mono);font-weight:700;color:' + (totBal>=0?'var(--accent)':'var(--danger)') + '">' + money(totBal) + '</td>';
+  tbody.appendChild(trTot);
+
+  var balColor = totBal >= 0 ? 'var(--accent)' : 'var(--danger)';
+  document.getElementById('bal-totals').innerHTML =
+    '<div class="tc"><div class="tc-l">Ingresos</div><div class="tc-v">' + money(totIngresos) + '</div></div>' +
+    '<div class="tc"><div class="tc-l">Egresos caja</div><div class="tc-v" style="color:var(--warn)">' + money(totEgCaja) + '</div></div>' +
+    '<div class="tc"><div class="tc-l">Egresos gastos</div><div class="tc-v" style="color:var(--warn)">' + money(totEgGastos) + '</div></div>' +
+    '<div class="tc"><div class="tc-l">Balance</div><div class="tc-v" style="color:' + balColor + '">' + money(totBal) + '</div></div>';
 }
 </script>
 </body>
