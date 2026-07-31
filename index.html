@@ -400,6 +400,21 @@ create policy "acceso anonimo" on rendiciones
     <div style="display:flex;gap:0.6rem;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center">
       <select id="bal-year" style="font-family:var(--mono);font-size:0.8rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.42rem 0.7rem">
       </select>
+      <select id="bal-month" style="font-family:var(--mono);font-size:0.8rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.42rem 0.7rem">
+        <option value="0">Todos los meses</option>
+        <option value="1">Enero</option>
+        <option value="2">Febrero</option>
+        <option value="3">Marzo</option>
+        <option value="4">Abril</option>
+        <option value="5">Mayo</option>
+        <option value="6">Junio</option>
+        <option value="7">Julio</option>
+        <option value="8">Agosto</option>
+        <option value="9">Septiembre</option>
+        <option value="10">Octubre</option>
+        <option value="11">Noviembre</option>
+        <option value="12">Diciembre</option>
+      </select>
       <button class="btn" onclick="renderBalance()">Aplicar</button>
     </div>
 
@@ -603,7 +618,6 @@ function showTab(t) {
     if (el.textContent.toLowerCase().includes(map[t])) el.classList.add('active');
   });
   if (t === 'balance') {
-    // Poblar selector de años
     var selYear = document.getElementById('bal-year');
     var curYear = new Date().getFullYear();
     if (!selYear.options.length) {
@@ -612,6 +626,11 @@ function showTab(t) {
         opt.value = y; opt.textContent = y;
         selYear.appendChild(opt);
       }
+    }
+    // Setear mes actual por defecto
+    var selMonth = document.getElementById('bal-month');
+    if (selMonth && selMonth.value === '0') {
+      selMonth.value = String(new Date().getMonth()+1);
     }
     renderBalance();
   }
@@ -1499,9 +1518,15 @@ async function cargarGastos() {
         '<td style="font-family:var(--mono);font-size:0.8rem;color:var(--text2)">' + (g.fecha_pago||'—') + '</td>' +
         (esAdmin ?
           '<td style="display:flex;gap:4px">' +
-            '<button class="btn" style="font-size:11px;padding:2px 7px" onclick="abrirEditarGasto(' + g.id + ','' + (g.fecha||'') + '','' + (g.descripcion||'').replace(/'/g,"\'") + '',' + (g.monto||0) + ','' + (g.fecha_pago||'') + '')">✎</button>' +
+            '<button class="btn btn-edit-gasto" style="font-size:11px;padding:2px 7px" data-gid="' + g.id + '">✎</button>' +
             '<button class="btn" style="font-size:11px;padding:2px 7px;color:var(--danger)" onclick="eliminarGasto(' + g.id + ')">✕</button>' +
           '</td>' : '<td></td>');
+      if (esAdmin) {
+        var btn = tr.querySelector('.btn-edit-gasto');
+        if (btn) {
+          (function(gasto){ btn.addEventListener('click', function(){ abrirEditarGasto(gasto); }); })(g);
+        }
+      }
       tbody.appendChild(tr);
     });
   } catch(e) { console.error('Error gastos', e); }
@@ -1526,25 +1551,25 @@ function limpiarFiltroGastos() {
   cargarGastos();
 }
 
-async function abrirEditarGasto(id, fecha, desc, monto, fechaPago) {
-  var f = fecha ? fecha.split('/') : ['','',''];
-  var fp = fechaPago ? fechaPago.split('/') : ['','',''];
-  var newFecha = f.length===3 ? f[2]+'-'+f[1]+'-'+f[0] : '';
-  var newFP = fp.length===3 ? fp[2]+'-'+fp[1]+'-'+fp[0] : '';
-  var newDesc = prompt('Descripcion:', desc);
+async function abrirEditarGasto(g) {
+  var f = (g.fecha||'').split('/');
+  var fp = (g.fecha_pago||'').split('/');
+  var fechaISO = f.length===3 ? f[2]+'-'+f[1]+'-'+f[0] : '';
+  var fpISO = fp.length===3 ? fp[2]+'-'+fp[1]+'-'+fp[0] : '';
+  var newDesc = prompt('Descripcion:', g.descripcion||'');
   if (newDesc === null) return;
-  var newMonto = parseFloat(prompt('Monto:', monto));
+  var newMonto = parseFloat(prompt('Monto:', g.monto||0));
   if (isNaN(newMonto) || newMonto <= 0) { toast('Monto invalido', 'warn'); return; }
-  var newFechaInput = prompt('Fecha (YYYY-MM-DD):', newFecha);
+  var newFechaInput = prompt('Fecha (YYYY-MM-DD):', fechaISO);
   if (!newFechaInput) return;
-  var newFPInput = prompt('Fecha de pago (YYYY-MM-DD, dejar vacio si no aplica):', newFP);
+  var newFPInput = prompt('Fecha de pago (YYYY-MM-DD, dejar vacio si no aplica):', fpISO);
   var pts = newFechaInput.split('-');
   var fechaStr = pts[2]+'/'+pts[1]+'/'+pts[0];
   var fechaPagoStr = null;
   if (newFPInput) { var pp = newFPInput.split('-'); fechaPagoStr = pp[2]+'/'+pp[1]+'/'+pp[0]; }
   var cfg = getCfg();
   try {
-    var r = await fetch(cfg.url + '/rest/v1/gastos?id=eq.' + id, {
+    var r = await fetch(cfg.url + '/rest/v1/gastos?id=eq.' + g.id, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key, 'Prefer': 'return=minimal' },
       body: JSON.stringify({ fecha: fechaStr, descripcion: newDesc, monto: newMonto, fecha_pago: fechaPagoStr })
@@ -1571,6 +1596,9 @@ async function renderBalance() {
   var MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
   // Agrupar por mes
+  var mesSelEl = document.getElementById('bal-month');
+  var mesSel = mesSelEl ? parseInt(mesSelEl.value) : 0;
+
   var data = {};
   for (var m=1; m<=12; m++) {
     data[m] = { ingresos: 0, egresosCaja: 0, egresosGastos: 0 };
@@ -1582,6 +1610,7 @@ async function renderBalance() {
     if (pts.length !== 3) return;
     var y = parseInt(pts[2]), mo = parseInt(pts[1]);
     if (y !== parseInt(year)) return;
+    if (mesSel && mo !== mesSel) return;
     data[mo].ingresos += (r.total_general||0);
     data[mo].egresosCaja += (r.gastos||0);
   });
@@ -1592,6 +1621,7 @@ async function renderBalance() {
     if (pts.length !== 3) return;
     var y = parseInt(pts[2]), mo = parseInt(pts[1]);
     if (y !== parseInt(year)) return;
+    if (mesSel && mo !== mesSel) return;
     data[mo].egresosGastos += (g.monto||0);
   });
 
@@ -1599,7 +1629,9 @@ async function renderBalance() {
   var tbody = document.getElementById('bal-body');
   tbody.innerHTML = '';
 
-  for (var m=1; m<=12; m++) {
+  var mesesFiltrar = mesSel ? [mesSel] : [1,2,3,4,5,6,7,8,9,10,11,12];
+  for (var mi=0; mi<mesesFiltrar.length; mi++) {
+    var m = mesesFiltrar[mi];
     var d = data[m];
     var totalEgresos = d.egresosCaja + d.egresosGastos;
     var balance = d.ingresos - totalEgresos;
