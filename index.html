@@ -193,6 +193,7 @@ function doLogout() {
     <button class="active" onclick="showTab('historial')">Historial</button>
     <button onclick="showTab('analisis')">Análisis</button>
     <button onclick="showTab('config')">Configuración</button>
+    <button id="tab-btn-gastos" onclick="showTab('gastos')">Gastos</button>
   </div>
 
   <!-- ══ TAB HISTORIAL ══ -->
@@ -330,6 +331,62 @@ create policy "acceso anonimo" on rendiciones
     </div>
 
   </div><!-- /tab-analisis -->
+
+  <!-- ══ TAB GASTOS ══ -->
+  <div id="tab-gastos" class="tab-content">
+
+    <div id="gastos-form-section">
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-title">Agregar gasto</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:0.6rem">
+          <div>
+            <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text3);margin-bottom:4px;text-transform:uppercase">Fecha</div>
+            <input type="date" id="g-fecha" style="width:100%;font-family:var(--mono);font-size:0.82rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.4rem 0.6rem">
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text3);margin-bottom:4px;text-transform:uppercase">Monto</div>
+            <input type="number" id="g-monto" min="0" placeholder="0" style="width:100%;font-family:var(--mono);font-size:0.82rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.4rem 0.6rem">
+          </div>
+        </div>
+        <div style="margin-bottom:0.6rem">
+          <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text3);margin-bottom:4px;text-transform:uppercase">Descripción</div>
+          <input type="text" id="g-desc" placeholder="Ej: Insumos de limpieza, sueldo, servicio..." style="width:100%;font-family:var(--mono);font-size:0.82rem;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.4rem 0.6rem">
+        </div>
+        <button class="btn primary" onclick="agregarGasto()" style="width:auto;padding:0.5rem 1.5rem">Guardar gasto</button>
+        <div id="g-err" style="font-family:var(--mono);font-size:0.78rem;color:var(--danger);margin-top:0.5rem;display:none"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:0.6rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
+      <input type="date" id="g-from" style="font-family:var(--mono);font-size:0.8rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.42rem 0.7rem">
+      <input type="date" id="g-to" style="font-family:var(--mono);font-size:0.8rem;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:0.42rem 0.7rem">
+      <button class="btn" onclick="cargarGastos()">Filtrar</button>
+      <button class="btn" onclick="limpiarFiltroGastos()">Limpiar</button>
+    </div>
+
+    <div class="card" style="margin-bottom:0.75rem" id="g-totals-card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-family:var(--mono);font-size:0.75rem;color:var(--text3);text-transform:uppercase">Total gastos período</span>
+        <span style="font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--warn)" id="g-total">$ 0</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="overflow-x:auto">
+        <table class="htable" id="g-table">
+          <thead><tr>
+            <th>Fecha</th>
+            <th>Descripción</th>
+            <th>Monto</th>
+            <th id="g-acciones-th"></th>
+          </tr></thead>
+          <tbody id="g-body"></tbody>
+        </table>
+      </div>
+      <div id="g-empty" style="display:none;font-family:var(--mono);font-size:0.82rem;color:var(--text3);padding:1rem;text-align:center">Sin gastos para el período seleccionado.</div>
+    </div>
+
+  </div><!-- /tab-gastos -->
 
 </div>
 
@@ -473,6 +530,10 @@ function mostrarSoloLectura() {
     }
   });
   document.body.classList.add('readonly-mode');
+  // Sofi no ve gastos, Ari sí
+  var sesionRO = JSON.parse(sessionStorage.getItem('rdcaja_admin')||'{}');
+  var btnGastosRO = document.getElementById('tab-btn-gastos');
+  if (btnGastosRO && sesionRO.user !== 'Ari') btnGastosRO.style.display = 'none';
   var hoy = new Date();
   var y = hoy.getFullYear();
   var m = String(hoy.getMonth()+1).padStart(2,'0');
@@ -505,6 +566,19 @@ function showTab(t) {
     const map = { scanner:'escan', historial:'hist', analisis:'anál', config:'config' };
     if (el.textContent.toLowerCase().includes(map[t])) el.classList.add('active');
   });
+  if (t === 'gastos') {
+    var hoyG = new Date().toISOString().split('T')[0];
+    if (!document.getElementById('g-from').value) {
+      var yG = hoyG.split('-')[0], mG = hoyG.split('-')[1];
+      document.getElementById('g-from').value = yG + '-' + mG + '-01';
+      var lastDayG = new Date(parseInt(yG), parseInt(mG), 0).getDate();
+      document.getElementById('g-to').value = yG + '-' + mG + '-' + String(lastDayG).padStart(2,'0');
+    }
+    // Solo admin puede agregar gastos
+    var formGastos = document.getElementById('gastos-form-section');
+    if (formGastos) formGastos.style.display = esReadonly() ? 'none' : 'block';
+    cargarGastos();
+  }
   if (t === 'historial') {
     // Si no hay filtro activo, setear mes actual por defecto
     var sfrom = document.getElementById('s-from');
@@ -1290,6 +1364,110 @@ window.addEventListener('DOMContentLoaded', function() {
   if (!cfg.url) saveCfg({ url: 'https://dihhccmimdzcfsjcobgs.supabase.co', key: 'sb_publishable_Sf68jNa72m3UJcsl014Vhg_sFp_BYqD' });
   document.getElementById('l-pass').addEventListener('keydown', function(e) { if(e.key==='Enter') doLogin(); });
 });
+
+// ══ GASTOS ═══════════════════════════════════════════════════════
+function moneyG(n) {
+  return '$ ' + Number(n||0).toLocaleString('es-AR');
+}
+
+function esAri() {
+  var s = sessionStorage.getItem('rdcaja_admin');
+  if (!s) return false;
+  var u = JSON.parse(s);
+  return u.rol === 'readonly' && u.user === 'Ari';
+}
+
+async function agregarGasto() {
+  var fecha = document.getElementById('g-fecha').value;
+  var monto = parseFloat(document.getElementById('g-monto').value);
+  var desc = document.getElementById('g-desc').value.trim();
+  var errEl = document.getElementById('g-err');
+  errEl.style.display = 'none';
+  if (!fecha) { errEl.textContent = 'Ingresa la fecha.'; errEl.style.display = 'block'; return; }
+  if (!monto || monto <= 0) { errEl.textContent = 'Ingresa un monto valido.'; errEl.style.display = 'block'; return; }
+  if (!desc) { errEl.textContent = 'Ingresa una descripcion.'; errEl.style.display = 'block'; return; }
+  var pts = fecha.split('-');
+  var fechaStr = pts[2] + '/' + pts[1] + '/' + pts[0];
+  var row = { fecha: fechaStr, descripcion: desc, monto: monto, creado_por: 'Agus', creado_at: new Date().toISOString() };
+  try {
+    var hdrs = { 'Content-Type': 'application/json', 'apikey': supaBase(), 'Authorization': 'Bearer ' + supaBase(), 'Prefer': 'return=minimal' };
+    var cfg = getCfg();
+    var r = await fetch(cfg.url + '/rest/v1/gastos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key, 'Prefer': 'return=minimal' },
+      body: JSON.stringify(row)
+    });
+    if (!r.ok) throw new Error();
+    toast('Gasto guardado ✓', 'ok');
+    document.getElementById('g-fecha').value = '';
+    document.getElementById('g-monto').value = '';
+    document.getElementById('g-desc').value = '';
+    cargarGastos();
+  } catch(e) {
+    errEl.textContent = 'Error al guardar.';
+    errEl.style.display = 'block';
+  }
+}
+
+async function cargarGastos() {
+  var cfg = getCfg();
+  if (!cfg.url) return;
+  var desde = document.getElementById('g-from').value;
+  var hasta = document.getElementById('g-to').value;
+  var url = cfg.url + '/rest/v1/gastos?order=fecha.desc,id.desc&select=*';
+  try {
+    var r = await fetch(url, { headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key } });
+    var lista = await r.json();
+    // Filtrar por fecha en JS (formato DD/MM/YYYY)
+    function fechaISO(f) { var p=f.split('/'); return p[2]+'-'+p[1]+'-'+p[0]; }
+    if (desde) lista = lista.filter(function(g){ return fechaISO(g.fecha) >= desde; });
+    if (hasta) lista = lista.filter(function(g){ return fechaISO(g.fecha) <= hasta; });
+
+    var total = lista.reduce(function(s,g){ return s+(g.monto||0); }, 0);
+    document.getElementById('g-total').textContent = moneyG(total);
+
+    var tbody = document.getElementById('g-body');
+    var empty = document.getElementById('g-empty');
+    tbody.innerHTML = '';
+    var esAdmin = !esReadonly();
+    document.getElementById('g-acciones-th').textContent = esAdmin ? 'Acciones' : '';
+
+    if (!lista.length) {
+      empty.style.display = 'block';
+      document.getElementById('g-table').style.display = 'none';
+      return;
+    }
+    empty.style.display = 'none';
+    document.getElementById('g-table').style.display = 'table';
+    lista.forEach(function(g) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + (g.fecha||'—') + '</td>' +
+        '<td>' + (g.descripcion||'—') + '</td>' +
+        '<td style="font-family:var(--mono);color:var(--warn)">' + moneyG(g.monto) + '</td>' +
+        (esAdmin ? '<td><button class="btn" style="font-size:11px;padding:2px 7px;color:var(--danger)" onclick="eliminarGasto(' + g.id + ')">✕</button></td>' : '<td></td>');
+      tbody.appendChild(tr);
+    });
+  } catch(e) { console.error('Error gastos', e); }
+}
+
+async function eliminarGasto(id) {
+  if (!confirm('Eliminar este gasto?')) return;
+  var cfg = getCfg();
+  try {
+    await fetch(cfg.url + '/rest/v1/gastos?id=eq.' + id, {
+      method: 'DELETE',
+      headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key }
+    });
+    cargarGastos();
+    toast('Gasto eliminado', 'ok');
+  } catch(e) { toast('Error al eliminar', 'warn'); }
+}
+
+function limpiarFiltroGastos() {
+  document.getElementById('g-from').value = '';
+  document.getElementById('g-to').value = '';
+  cargarGastos();
+}
 </script>
 </body>
 </html>
